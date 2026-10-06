@@ -193,9 +193,10 @@ function listen(){
     if(!id){if(nocheId){clearSubs();nocheId=null;noche=null;cajas=[];movs=[];}loaded=true;render();return;}
     if(id!==nocheId){
       nocheId=id;clearSubs();noche=null;cajas=[];movs=[];
-      unsubs.push(nocheRef().onSnapshot({includeMetadataChanges:true},d=>{noche=d.exists?{id:d.id,...d.data()}:null;loaded=true;pend.noche=!!(d.metadata&&d.metadata.hasPendingWrites);liveRender();},onErr));
-      unsubs.push(nocheRef().collection('cajas').onSnapshot({includeMetadataChanges:true},q=>{cajas=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.orden||0)-(b.orden||0));pend.cajas=!!(q.metadata&&q.metadata.hasPendingWrites);liveRender();},onErr));
-      unsubs.push(nocheRef().collection('movs').onSnapshot({includeMetadataChanges:true},q=>{movs=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));pend.movs=!!(q.metadata&&q.metadata.hasPendingWrites);liveRender();},onErr));
+      let lastNoche='';
+      unsubs.push(nocheRef().onSnapshot({includeMetadataChanges:true},d=>{if(nocheId!==id)return;pend.noche=!!(d.metadata&&d.metadata.hasPendingWrites);const js=d.exists?JSON.stringify(d.data()):'';if(js===lastNoche&&loaded){updateSync();return;}lastNoche=js;noche=d.exists?{id:d.id,...d.data()}:null;loaded=true;liveRender();},onErr));
+      unsubs.push(nocheRef().collection('cajas').onSnapshot({includeMetadataChanges:true},q=>{if(nocheId!==id)return;pend.cajas=!!(q.metadata&&q.metadata.hasPendingWrites);if(q.docChanges&&q.docChanges().length===0&&cajas.length){updateSync();return;}cajas=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.orden||0)-(b.orden||0));liveRender();},onErr));
+      unsubs.push(nocheRef().collection('movs').onSnapshot({includeMetadataChanges:true},q=>{if(nocheId!==id)return;pend.movs=!!(q.metadata&&q.metadata.hasPendingWrites);if(q.docChanges&&q.docChanges().length===0&&movs.length){updateSync();return;}movs=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));liveRender();},onErr));
     }
   },e=>{fbError=e;loaded=true;render();});
 }
@@ -203,7 +204,7 @@ function listen(){
 let needRender=false;
 function liveRender(){
   const a=document.activeElement;
-  const typing=a&&(a.tagName==='INPUT'||a.tagName==='SELECT')&&document.getElementById('app').contains(a);
+  const typing=a&&(a.tagName==='INPUT'||a.tagName==='SELECT')&&a.value!==''&&document.getElementById('app').contains(a);
   if(typing||U.view==='editCaja'){needRender=true;updateSync();return;}
   render();
 }
@@ -439,20 +440,47 @@ function vVenta(){
 }
 
 /* ---------- CAJA ---------- */
+const CARGAS={transfer:{lbl:'Transferencia',btn:'Anotar transferencia'},efectivo:{lbl:'Efectivo a cuenta',btn:'Anotar efectivo'},gasto:{lbl:'Gasto',btn:'Anotar gasto'}};
 function vCaja(){
   const c=cajas.find(x=>x.id===U.caja); if(!c) return hdrBack('Caja','','volver')+'<main><div class="empty">Cargando…</div></main>';
   const k=calcCaja(c);
+  const ct=U.carga||'transfer';
   const cupoRows=tipos().filter(t=>pint((c.cupos||{})[t.id])>0||(k.porTipo[t.id]||{}).qty).map(t=>{const a=pint((c.cupos||{})[t.id]);const v=(k.porTipo[t.id]||{}).qty||0;const q=a-v;const pas=a>0&&q<0;
     return `<tr ${pas?'style="background:var(--badbg)"':''}><td ${pas?'style="color:var(--badink);font-weight:600"':''}>${esc(t.label)}</td><td class="num">${a||'—'}</td><td class="num">${v}</td><td class="num" style="font-weight:700;${pas?'color:var(--badink)':''}">${a?(pas?(q+' pasado'):q):'—'}</td></tr>`;}).join('');
-  const otros=k.ms.filter(m=>m.t!=='venta').slice().reverse();
-  const ult=k.ventas.slice().reverse().slice(0,8);
+  const lista=k.ms.slice().reverse();
+  const efCobrado=k.vendido-k.transfer;
   const sub=k.reabierta?'Volver a rendir':k.rendida?'Caja rendida':'';
+  const filaMov=m=>{let txt,monto,cls='';
+    if(m.t==='venta'){const t=getT(m.tipo)||{label:m.tipo};txt=`${m.qty} ${esc(t.label)}${t.free?'':' · P'+((m.tier||0)+1)}`;monto=t.free?'free':fmt(m.total);}
+    else if(m.t==='transfer'){txt='<b>Transferencia</b>';monto=fmt(m.monto);cls='t-ok';}
+    else if(m.t==='efectivo'){txt='Efectivo a cuenta';monto=fmt(m.monto);}
+    else{txt='Gasto'+(m.desc?': '+esc(m.desc):'');monto='−'+fmt(m.monto);cls='t-bad';}
+    return `<div class="num" data-mov="${m.id}"><span class="m" style="width:44px;font-size:14px">${hhmm(m.ts)}</span><span class="grow">${txt}</span><span class="r ${cls}">${monto}</span>${delBtn(m.id,m.t==='venta'?'Anular venta':'Borrar movimiento')}</div>`;};
   return hdrBack(esc(c.nombre),sub,'volver',`<button class="link" data-a="editCaja" style="padding:0 8px;min-height:48px;align-self:center">Editar</button>`)+`<main>
     ${k.reabierta?`<div class="status warn">${I.alert} Hubo movimientos después de rendir. Volvé a rendir esta caja.</div>`:''}
-    <section class="hero grid2" style="gap:12px">
-      <div><div class="lbl">Entradas en calle</div><div class="big num" style="font-size:64px">${k.qtyPaga}</div><div class="sub">${[k.alpogo?`+ ${k.alpogo} Alpogo`:'',k.qtyFree?`+ ${k.qtyFree} free`:''].filter(Boolean).join(' · ')||'&nbsp;'}</div></div>
-      <div><div class="lbl">Vendido en calle</div><div class="bebas num" style="font-size:38px;line-height:1.5">${fmt(k.vendido)}</div><div class="sub num">Sueldo ${fmt(k.comision)}</div></div>
+    <section class="hero" style="display:flex;flex-direction:column;gap:12px">
+      <div class="row-between" style="align-items:flex-end"><div><div class="lbl">Vendido en calle</div><div class="bebas num" style="font-size:44px;line-height:1">${fmt(k.vendido)}</div></div><div style="text-align:right"><div class="lbl">Entradas</div><div class="bebas num" style="font-size:44px;line-height:1">${k.qtyPaga}</div></div></div>
+      <div class="grid2" style="gap:8px">
+        <div style="background:#E3F1E8;padding:10px 12px"><div class="lbl" style="color:var(--okink)">Transferencias</div><div class="bebas num" style="font-size:28px">${fmt(k.transfer)}</div></div>
+        <div style="background:#ECEAE4;padding:10px 12px"><div class="lbl">Efectivo cobrado</div><div class="bebas num" style="font-size:28px">${fmt(efCobrado)}</div></div>
+      </div>
+      <div class="row-between" style="border-top:1px solid var(--line);padding-top:10px"><span style="font-weight:700">Debe entregar en efectivo</span><span class="bebas num" style="font-size:28px">${fmt(k.aEntregar)}</span></div>
     </section>
+
+    <section class="stack box" style="padding:12px;gap:10px">
+      <div class="grid3" role="group" aria-label="Qué cargar">${Object.entries(CARGAS).map(([key,v])=>`<button class="opt" ${pr(ct===key)} data-a="tipoCarga" data-v="${key}" style="justify-content:center;font-size:14px;padding:0 6px;min-height:44px">${v.lbl==='Efectivo a cuenta'?'Efectivo':v.lbl}</button>`).join('')}</div>
+      <div style="display:flex;gap:8px">
+        <input class="in num" id="qMonto" inputmode="decimal" placeholder="Monto $" autocomplete="off" style="flex:1;min-width:0;font-size:20px;font-weight:700" data-enter="anotarRapido">
+        <button class="btn" data-a="anotarRapido" style="background:var(--ink);color:#fff;min-width:110px">Anotar</button>
+      </div>
+      ${ct==='gasto'?`<input class="in" id="qDesc" placeholder="¿En qué? (nafta, hielo…)" autocomplete="off" data-enter="anotarRapido">`:''}
+      <p class="note">${ct==='transfer'?'Cada transferencia que entra a su Mercado Pago, de a una.':ct==='efectivo'?'Plata en efectivo que te da antes de rendir.':'Lo que gastó de la plata de la caja.'}</p>
+    </section>
+
+    <section class="stack"><div class="row-between"><h2 class="lbl">Movimientos</h2><span class="sub">${lista.length}</span></div>
+      ${lista.length?`<div class="box list">${lista.map(filaMov).join('')}</div>`:'<p class="note">Todavía no hay ventas ni plata cargada.</p>'}
+    </section>
+
     <section class="stack">
       <h2 class="lbl">Alpogo · solo para su comisión</h2>
       <div class="box" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 14px">
@@ -462,13 +490,7 @@ function vCaja(){
     </section>
     ${cupoRows?`<section class="stack"><div class="row-between" style="align-items:center"><h2 class="lbl">Cupos</h2><button class="link" data-a="editCaja">Editar cupos</button></div>
       <div class="box"><table class="t"><thead><tr><th>Tipo</th><th>Dio</th><th>Vendió</th><th>Quedan</th></tr></thead><tbody>${cupoRows}</tbody></table></div></section>`:''}
-    <section class="stack"><h2 class="lbl">Plata y gastos de la caja</h2>
-      ${otros.length?`<div class="box list">${otros.map(m=>`<div class="num" data-mov="${m.id}"><span class="grow">${m.t==='transfer'?'Transferencia':m.t==='efectivo'?'Efectivo a cuenta':'Gasto'+(m.desc?': '+esc(m.desc):'')}</span><span class="m" style="font-size:13px">${hhmm(m.ts)}</span><span class="r">${m.t==='gasto'?'−':''}${fmt(m.monto)}</span>${delBtn(m.id,'Borrar movimiento')}</div>`).join('')}</div>`:'<p class="note">Nada todavía.</p>'}
-      <div class="grid3"><button class="btn" data-a="sheetMonto" data-v="transfer">+ Transfer</button><button class="btn" data-a="sheetMonto" data-v="efectivo">+ Efectivo</button><button class="btn" data-a="sheetMonto" data-v="gasto">+ Gasto</button></div>
-    </section>
-    <section class="stack"><h2 class="lbl">Últimas ventas</h2>
-      ${ult.length?`<div class="box list">${ult.map(v=>{const t=getT(v.tipo)||{label:v.tipo};return `<div class="num" data-mov="${v.id}"><span class="m" style="width:44px;font-size:14px">${hhmm(v.ts)}</span><span class="grow">${v.qty} ${esc(t.label)}${t.free?'':' · P'+((v.tier||0)+1)}</span><span class="r">${t.free?'free':fmt(v.total)}</span>${delBtn(v.id,'Anular venta')}</div>`}).join('')}</div>`:'<p class="note">Todavía no vendió en calle.</p>'}
-    </section>
+    <p class="note num">Sueldo de hoy: ${fmt(k.comision)} (fijo ${fmt(c.fijo)} + ${k.qtyPaga} de calle + ${k.alpogo} de Alpogo)</p>
   </main>
   <div class="dock split"><button class="cta2" data-a="irRendir" style="font-size:22px">${k.reabierta?'Volver a rendir':k.rendida?'Ver rendición':'Rendir caja'}</button><button class="cta" data-a="ventaDesde" data-v="${c.id}" style="font-size:26px;min-height:64px">+ Venta</button></div>`;
 }
@@ -572,7 +594,12 @@ function vCierre(){
       ${N.hayConteo?(cuadra(N.difConteo)?`<div class="status ok num">${I.check} Contaste ${fmt(N.contado)} · cuadra</div>`:`<div class="status ${N.difConteo<0?'bad':'warn'} num">${I.alert} Contaste ${fmt(N.contado)} · ${difTexto(N.difConteo).toLowerCase()} en tu conteo</div>`):'<p class="note">Contá los billetes cuando tengas todo, para verificar.</p>'}
       ${N.conDif.length?`<div class="status ${N.difRRPP<0?'bad':'warn'} num" style="font-size:15px;padding:10px 14px">Diferencias de RRPP: ${esc(nomDif)}</div>`:''}
       ${N.pendientes.length?`<p class="note num">Faltan rendir ${N.pendientes.length} caja${N.pendientes.length>1?'s':''}: deberían entregar ${fmt(N.faltaRendir)} más.</p>`:''}
-      <div class="grid2 noprint"><button class="btn" data-a="sheetBilletes">${N.hayConteo?'Recontar billetes':'Contar billetes'}</button><button class="btn" data-a="sheetMonto" data-v="gastoClub">+ Gasto del club</button></div>
+      <button class="btn noprint" data-a="togConteo">${U.conteo?'Cerrar conteo':N.hayConteo?'Recontar billetes':'Contar billetes'}</button>
+      ${U.conteo?(()=>{const b=noche.billetes||{};return `<div class="box">${DENOMS.map(d=>`<div style="display:grid;grid-template-columns:92px 84px 1fr;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--line2)"><label for="bi_${d}" class="num" style="font-weight:600">${fmt(d)}</label><input class="cupo-in num" style="width:84px" id="bi_${d}" inputmode="numeric" value="${pint(b[d])||''}" placeholder="0" data-i="billete" data-d="${d}"><span class="num" style="text-align:right" id="bs_${d}">${pint(b[d])?fmt(d*pint(b[d])):'—'}</span></div>`).join('')}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px"><span style="font-weight:700">Total <span class="bebas num" style="font-size:26px" id="biTot">${fmt(DENOMS.reduce((x,d)=>x+d*pint(b[d]),0))}</span></span><button class="btn" data-a="guardarBilletes" style="background:var(--ink);color:#fff">Guardar conteo</button></div></div>`;})():''}
+      <div class="box noprint" style="padding:12px;display:flex;flex-direction:column;gap:8px"><div class="lbl">Gasto del club</div>
+        <div style="display:flex;gap:8px"><input class="in num" id="gcMonto" inputmode="decimal" placeholder="Monto $" autocomplete="off" style="flex:1;min-width:0" data-enter="anotarGastoClub"><button class="btn" data-a="anotarGastoClub" style="background:var(--ink);color:#fff;min-width:100px">Anotar</button></div>
+        <input class="in" id="gcDesc" placeholder="¿En qué?" autocomplete="off" data-enter="anotarGastoClub"></div>
       ${vivos().filter(m=>m.t==='gastoClub').length?`<div class="box list num">${vivos().filter(m=>m.t==='gastoClub').map(m=>`<div data-mov="${m.id}"><span class="grow">${esc(m.desc||'Gasto del club')}</span><span class="r">${fmt(m.monto)}</span>${delBtn(m.id,'Borrar gasto del club')}</div>`).join('')}</div>`:''}
     </section>
     <section class="stack"><h2 class="lbl">Sueldos de la noche</h2>
@@ -610,7 +637,13 @@ function vAjustes(){
       <div class="grid2">${TT.map(t=>`<button class="opt tog" ${pr(act.includes(t.id))} data-a="togTipo" data-v="${t.id}" style="font-size:15px">${esc(t.label)}${act.includes(t.id)?I.check:''}</button>`).join('')}</div></section>
     <section class="stack" style="border-top:2px solid var(--ink);padding-top:16px"><h2 class="lbl">Nueva noche</h2>
       <p class="note">Guarda esta noche en el historial (no se borra nada) y abre una nueva con los mismos RRPP, sueldos y precios, en cero.</p>
-      <button class="btn" data-a="sheetNuevaNoche">Empezar noche nueva</button></section>
+      ${U.nueva?`<div class="box stack" style="padding:12px;gap:10px">
+        <div class="field"><label for="nnN">Nombre del evento</label><input class="in" id="nnN" placeholder="Ej: Bresh" autocomplete="off"></div>
+        <div class="grid2"><div class="field"><label for="nnF">Fecha</label><input class="in" id="nnF" type="date" value="${hoyLocal()}"></div>
+        <div class="field"><label for="nnNum">Noche N°</label><input class="in num" id="nnNum" inputmode="numeric" value="${noche.numero?(+noche.numero+1):''}"></div></div>
+        <div class="grid2"><button class="btn" data-a="sheetNuevaNoche">Cancelar</button><button class="btn" data-a="crearNuevaNoche" style="background:var(--ink);color:#fff">Empezar</button></div></div>`
+      :`<button class="btn" data-a="sheetNuevaNoche">Empezar noche nueva</button>`}
+      <button class="link" data-a="descartarNoche" style="color:var(--badink);margin-top:8px">Descartar esta noche (prueba o error)</button></section>
   </main>`;
 }
 
@@ -787,7 +820,7 @@ const A={
   tabCajas(){U.view=null;U.tab='cajas';render();},
   volver(){U.view=null;render();},
   volverCaja(){U.view='caja';render();},
-  abrirCaja(id){U.caja=id;U.view='caja';window.scrollTo(0,0);render();},
+  abrirCaja(id){U.caja=id;U.carga='transfer';U.view='caja';window.scrollTo(0,0);render();},
   nuevaVenta(){U.venta={caja:cajas.length===1?cajas[0].id:(U.venta.caja&&cajas.some(c=>c.id===U.venta.caja)?U.venta.caja:null),tipo:null,tier:0,qty:1,verMas:false,desde:null};U.view='venta';window.scrollTo(0,0);render();},
   ventaDesde(id){U.venta={caja:id,tipo:null,tier:0,qty:1,verMas:false,desde:'caja'};U.view='venta';window.scrollTo(0,0);render();},
   cerrarVenta(){U.view=U.venta.desde==='caja'?'caja':null;render();},
@@ -811,7 +844,22 @@ const A={
     const txt=m.t==='venta'?`${m.qty} ${(getT(m.tipo)||{}).label||''}${m.total?' · '+fmt(m.total):''}`:fmt(m.monto);
     U.sheet={k:'confirm',titulo:m.t==='venta'?'¿Anular esta venta?':'¿Borrar este movimiento?',texto:txt+'. Queda registrado como anulado en el historial.',si:m.t==='venta'?'Anular':'Borrar',fn:()=>{anular(id);if(m.caja)reabrirSiRendida(m.caja);}};renderOverlay();},
   alpogo(d){const c=cajas.find(x=>x.id===U.caja);if(!c)return;if(+d<0&&pint(c.alpogo)<=0)return;updCaja(c.id,{alpogo:INC(+d)});reabrirSiRendida(c.id);},
-  sheetMonto(t){U.sheet={k:'monto',t,focus:'sMonto'};renderOverlay();},
+  tipoCarga(v){U.carga=v;render();const el=$('#qMonto');if(el)el.focus();},
+  anotarRapido(){
+    const ct=U.carga||'transfer';const inp=$('#qMonto');const monto=pint(inp&&inp.value);if(!monto){if(inp)inp.focus();toast('Escribí el monto',{err:true});return;}
+    const d=$('#qDesc');const desc=d?d.value.trim():'';
+    const ref=nocheRef().collection('movs').doc();
+    w(ref.set({t:ct,caja:U.caja,monto,desc,ts:TS(),anulada:false}),'el movimiento');
+    reabrirSiRendida(U.caja);
+    inp.value='';if(d)d.value='';U.flash=ref.id;
+    toast(CARGAS[ct].lbl+' anotada: '+fmt(monto));
+    render();const again=$('#qMonto');if(again)again.focus({preventScroll:true});
+  },
+  anotarGastoClub(){const inp=$('#gcMonto');const monto=pint(inp&&inp.value);if(!monto){if(inp)inp.focus();return;}const d=$('#gcDesc');
+    const ref=nocheRef().collection('movs').doc();w(ref.set({t:'gastoClub',caja:null,monto,desc:d?d.value.trim():'',ts:TS(),anulada:false}),'el gasto');
+    inp.value='';if(d)d.value='';U.flash=ref.id;toast('Gasto del club anotado: '+fmt(monto));render();},
+  togConteo(){U.conteo=!U.conteo;render();},
+  descartarNoche(){U.sheet={k:'confirm',titulo:'¿Descartar esta noche?',texto:'Se saca de la app y no cuenta para nada (queda guardada como descartada). Después empezás una noche nueva desde cero.',si:'Descartar',fn:()=>{const b=db.batch();b.update(nocheRef(),{estado:'descartada',descartadaEn:TS()});b.set(db.collection('config').doc('calle'),{nocheActivaId:null});w(b.commit());U.tab='noche';U.view=null;toast('Noche descartada');}};renderOverlay();},
   guardarMonto(){
     const s=U.sheet;const monto=pint($('#sMonto').value);if(!monto){$('#sMonto').focus();return;}
     const desc=$('#sDesc')?$('#sDesc').value.trim():'';
@@ -849,8 +897,8 @@ const A={
     const k=calcCaja(c);
     if(k.ms.length||k.alpogo||c.entrego!=null){toast('Tiene ventas, Alpogo o rendición: no se puede quitar',{err:true});return;}
     U.sheet={k:'confirm',titulo:'¿Quitar a '+c.nombre+'?',texto:'No tiene nada cargado en esta noche.',si:'Quitar',fn:()=>{w(nocheRef().collection('cajas').doc(c.id).delete());U.view=null;U.tab='ajustes';}};renderOverlay();},
-  sheetBilletes(){U.sheet={k:'billetes',focus:'bi_20000'};renderOverlay();},
-  guardarBilletes(){const upd={};DENOMS.forEach(d=>{upd['billetes.'+d]=pint($('#bi_'+d).value);});updNoche(upd);U.sheet=null;render();},
+  sheetBilletes(){A.togConteo();},
+  guardarBilletes(){const upd={};DENOMS.forEach(d=>{const el=$('#bi_'+d);upd['billetes.'+d]=pint(el?el.value:0);});updNoche(upd);U.conteo=false;toast('Conteo guardado');if(document.activeElement)document.activeElement.blur();render();},
   numPrecios(v){updNoche({numPrecios:+v});},
   togTipo(id){const act=noche.tipos&&noche.tipos.length?noche.tipos.slice():TT.map(t=>t.id);const i=act.indexOf(id);if(i>=0){if(act.length>1)act.splice(i,1);}else act.push(id);updNoche({tipos:act});},
   imprimir(){if(!pdfListo()){toast('Preparando el PDF… tocá de nuevo en unos segundos.',{err:true});cargarPdf().catch(()=>{});return;}descargarPdf(armarPdf());},
@@ -862,7 +910,7 @@ const A={
     if(faltan>0){U.sheet={k:'confirm',titulo:`Faltan ${faltan} caja${faltan>1?'s':''} por rendir`,texto:'¿Enviar igual? Después se puede reenviar.',si:'Enviar igual',peligro:false,fn};renderOverlay();}
     else fn();
   },
-  sheetNuevaNoche(){U.sheet={k:'nuevaNoche',focus:'nnN'};renderOverlay();},
+  sheetNuevaNoche(){U.nueva=!U.nueva;render();if(U.nueva){const el=$('#nnN');if(el)el.focus();}},
   crearNuevaNoche(){
     if(U.busy)return;
     const nombre=$('#nnN').value.trim();if(!nombre){$('#nnN').focus();return;}
@@ -876,7 +924,7 @@ const A={
     if(viejo.estado!=='cerrada')batch.update(viejoRef,{estado:'archivada'});
     batch.set(db.collection('config').doc('calle'),{nocheActivaId:ref.id});
     w(batch.commit(),'la noche nueva').finally(()=>{U.busy=false;});
-    U.sheet=null;U.tab='noche';U.view=null;toast('Noche nueva lista');render();
+    U.nueva=false;U.tab='noche';U.view=null;toast('Noche nueva lista');render();
   },
   crearNoche(){
     if(U.busy)return;
@@ -929,6 +977,7 @@ document.addEventListener('focusout',e=>{
   if(e.target&&e.target.id==='entrego'){clearTimeout(rendT);const c=cajas.find(x=>x.id===U.caja);const s=$('#statEntrego');if(c&&s)s.innerHTML=statusRendir(calcCaja(c),U.rendir.entrego,true);}
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.enter&&A[e.target.dataset.enter]){e.preventDefault();A[e.target.dataset.enter]();return;}
   if(e.key==='Escape'&&U.sheet&&U.sheet.k!=='billetes'){U.sheet=null;renderOverlay();}
   if(e.key==='Enter'&&U.sheet&&e.target.tagName==='INPUT'){const b={monto:'guardarMonto',billetes:'guardarBilletes',nuevaNoche:'crearNuevaNoche'}[U.sheet.k];if(b){e.preventDefault();A[b]();}}
 });

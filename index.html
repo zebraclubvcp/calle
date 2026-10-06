@@ -15,6 +15,7 @@
   --ok:#17663A;--okbg:#E3F1E8;--okink:#0F4D2A;
   --bad:#B42318;--badbg:#FBEAE7;--badink:#8F1D12;
   --warn:#6B4600;--warnbg:#FFF4DB;
+  --cash:#ECEAE4;--transfer:#E3F1E8;
   --ease-out:cubic-bezier(.23,1,.32,1);--ease-drawer:cubic-bezier(.32,.72,0,1);
   --z-dock:15;--z-nav:16;--z-header:20;--z-toast:50;--z-sheet:60;
 }
@@ -61,16 +62,24 @@ main{flex-grow:1;padding:16px 16px 28px;display:flex;flex-direction:column;gap:2
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .opt.tall{min-height:56px;padding:0 14px}
 .btn{min-height:48px;padding:0 14px;font-size:15px;font-weight:700;background:var(--surf);border:2px solid var(--ink);color:var(--ink)}
+.btn.ink{background:var(--ink);color:#fff}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:2px solid var(--ink);background:var(--surf)}
+.seg button{min-height:46px;padding:0 4px;border:none;border-left:2px solid var(--ink);background:none;font-size:14px;font-weight:600;color:var(--ink2);white-space:nowrap;transition:background-color .12s ease,color .12s ease}
+.seg button:first-child{border-left:none}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:700}
+.seg button:active{background:var(--press)}.seg button[aria-pressed="true"]:active{background:#2A2A2A}
 .cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:66px;padding:0 12px;background:var(--ink);color:#fff;border:2px solid var(--ink);box-shadow:6px 6px 0 0 var(--ink),6px 6px 0 2px var(--bg);font-family:'Bebas Neue','Arial Narrow',sans-serif;font-size:29px;letter-spacing:1px;white-space:nowrap;transition:transform .12s var(--ease-out),box-shadow .12s var(--ease-out)}
 .cta:active:not(:disabled){transform:translate(4px,4px);box-shadow:2px 2px 0 0 var(--ink),2px 2px 0 2px var(--bg)}
-.cta:disabled{opacity:.35;box-shadow:none;cursor:not-allowed}
+.cta:disabled{background:var(--press);color:var(--ink2);border-color:var(--line);box-shadow:none;cursor:not-allowed}
 .cta.danger{background:var(--bad);border-color:var(--bad);box-shadow:none}
 .cta2{display:flex;align-items:center;justify-content:center;min-height:64px;padding:0 10px;background:var(--surf);color:var(--ink);border:2px solid var(--ink);font-family:'Bebas Neue','Arial Narrow',sans-serif;font-size:24px;letter-spacing:1px;white-space:nowrap}
 .btn,.opt,.cta2,.iconbtn,.link{transition:transform .12s var(--ease-out),background-color .12s ease}
 .btn:active,.opt:active,.cta2:active{transform:scale(.97)}
 .iconbtn:active,.link:active{background:var(--press)}
 @media (hover:hover) and (pointer:fine){
-  .btn:hover,.cta2:hover,.opt[aria-pressed="false"]:hover,.list>button:hover,.iconbtn:hover{background:var(--press)}
+  .btn.ink:hover{background:#2A2A2A}
+  .seg button[aria-pressed="false"]:hover{background:var(--press);color:var(--ink)}
+  .btn:not(.ink):hover,.cta2:hover,.opt[aria-pressed="false"]:hover,.list>button:hover,.iconbtn:hover{background:var(--press)}
   .cta:hover:not(:disabled){background:#2A2A2A}
   nav.tabs button:hover{color:var(--ink)}
 }
@@ -82,6 +91,7 @@ nav.tabs{position:sticky;bottom:0;z-index:var(--z-nav);display:grid;grid-templat
 nav.tabs button{min-height:60px;background:none;border:none;border-top:4px solid transparent;font-size:14px;font-weight:600;color:var(--ink2);transition:background-color .12s ease}
 nav.tabs button:active{background:var(--press)}
 nav.tabs button[aria-current="page"]{border-top-color:var(--ink);color:var(--ink);font-weight:700}
+body.kb nav.tabs{display:none!important}body.kb .dock{position:static}
 .bar{height:10px;background:var(--line2)}.bar>i{display:block;height:10px;background:var(--ink)}
 .tipo-row{display:grid;grid-template-columns:118px minmax(0,1fr) 44px;align-items:center;gap:10px;font-size:15px}
 .stepper{display:flex;align-items:center;justify-content:space-between;background:var(--surf);border:2px solid var(--edge);padding:8px}
@@ -101,7 +111,7 @@ nav.tabs button[aria-current="page"]{border-top-color:var(--ink);color:var(--ink
 .note{font-size:13px;color:var(--ink2);line-height:1.45;margin:0}
 .link{background:none;border:none;min-height:44px;padding:0 4px;font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px;color:var(--ink);text-align:left;display:inline-flex;align-items:center;align-self:flex-start}
 .empty{padding:28px 16px;text-align:center;color:var(--ink2);font-size:15px;line-height:1.5}
-.toast{position:fixed;left:50%;bottom:calc(164px + env(safe-area-inset-bottom));width:calc(100% - 32px);max-width:448px;z-index:var(--z-toast);display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ink);color:#fff;padding:0 6px 0 14px;min-height:56px;font-size:15px;font-weight:600;box-shadow:0 8px 24px rgba(20,20,20,.25);transform:translate(-50%,0);opacity:1;transition:transform .2s var(--ease-out),opacity .2s var(--ease-out)}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));width:calc(100% - 32px);max-width:448px;z-index:var(--z-toast);display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ink);color:#fff;padding:0 6px 0 14px;min-height:56px;font-size:15px;font-weight:600;box-shadow:0 8px 24px rgba(20,20,20,.25);transform:translate(-50%,0);opacity:1;transition:transform .2s var(--ease-out),opacity .2s var(--ease-out)}
 .toast.err{background:var(--bad)}
 .toast.in{transform:translate(-50%,10px);opacity:0}
 .toast.out{transform:translate(-50%,6px);opacity:0;transition-duration:.15s}
@@ -234,7 +244,8 @@ const corto=n=>{const c=abrev(n);return cajas.filter(x=>abrev(x.nombre)===c).len
 const fechaTxt=f=>{if(!f)return'';const [y,m,d]=f.split('-');const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];const dt=new Date(+y,+m-1,+d);return dias[dt.getDay()]+' '+(+d)+'/'+(+m);};
 const tipos=()=>{const a=noche&&noche.tipos&&noche.tipos.length?noche.tipos:TT.map(t=>t.id);return TT.filter(t=>a.includes(t.id));};
 const precio=(tid,i)=>n0(((noche&&noche.precios&&noche.precios[tid])||[])[i]);
-const nPrecios=()=>(noche&&noche.numPrecios)||1;
+const preciosDe=tid=>((noche&&noche.precios&&noche.precios[tid])||[]).map(n0); // lista de precios de un tipo (Precio 1, Precio 2…)
+const opcionesPrecio=tid=>preciosDe(tid).map((v,i)=>({i,v})).filter(x=>x.v>0);
 const vivos=()=>movs.filter(m=>!m.anulada);
 const cuadra=d=>Math.abs(d)<TOLERANCIA;
 const difTexto=d=>cuadra(d)?'Cuadra':d<0?'Faltan '+fmt(-d):'Sobran '+fmt(d);
@@ -335,6 +346,7 @@ function render(){
   if(!U.sheet) renderOverlay();
   if(U.flash){const el=document.querySelector(`[data-mov="${U.flash}"]`);if(el){el.classList.add('flash');U.flash=null;}}
   if(actId){const el=document.getElementById(actId);if(el&&el!==document.activeElement){el.focus();try{if(selS!=null)el.setSelectionRange(selS,selS)}catch(e){}}}
+  posToast();
 }
 function syncBadge(){
   if(!online) return `<span class="sync t-warn" role="status"><i style="background:var(--warn)"></i>Sin señal</span>`;
@@ -360,7 +372,6 @@ function vSinNoche(){
     <p class="note" style="font-size:15px">Cargá el nombre y la fecha. Después agregás los RRPP y los precios en Ajustes.</p>
     <div class="field"><label for="nN">Nombre del evento</label><input class="in" id="nN" placeholder="Ej: Oktobeer" autocomplete="off"></div>
     <div class="field"><label for="nF">Fecha</label><input class="in" id="nF" type="date" value="${hoyLocal()}"></div>
-    <div class="field"><label for="nNum">Número de fin de semana</label><input class="in" id="nNum" inputmode="numeric" placeholder="Ej: 7"></div>
     <button class="cta" data-a="crearNoche" ${U.busy?'disabled':''}>${I.plus} Empezar noche</button></div></main>`;
 }
 
@@ -371,12 +382,12 @@ function vNoche(){
   const max=ord.length?ord[0].q:1;
   const extra=[N.qtyFree?`+ ${N.qtyFree} free (${N.qtyPaga+N.qtyFree} personas)`:'',N.alpogo?`${N.alpogo} por Alpogo (las cobra la ticketera)`:''].filter(Boolean).join(' · ');
   return `<main>
-    <div class="row-between"><h1 class="bebas" style="font-size:30px;margin:0;font-weight:400">${esc(fechaTxt(noche.fecha))} · ${esc(noche.nombre)}</h1><span class="sub" style="font-weight:600;white-space:nowrap">${noche.numero?'Noche '+esc(noche.numero):''}</span></div>
+    <div class="row-between"><h1 class="bebas" style="font-size:30px;margin:0;font-weight:400">${esc(fechaTxt(noche.fecha))} · ${esc(noche.nombre)}</h1></div>
     <section class="hero stack" style="gap:14px">
       <div><div class="lbl">Entradas vendidas en calle</div><div class="big num" style="font-size:104px">${N.qtyPaga}</div>
       ${extra?`<div class="sub" style="font-size:14px">${extra}</div>`:''}</div>
       <div class="grid2" style="border-top:1px solid var(--line);padding-top:14px;gap:12px">
-        <div><div class="lbl">Recaudado</div><div class="bebas num" style="font-size:36px">${fmt(N.vendido)}</div><div class="sub num">Efectivo ${fmt(N.efectivo)}<br>Transfer ${fmt(N.transfer)}</div></div>
+        <div><div class="lbl">Recaudado</div><div class="bebas num" style="font-size:36px">${fmt(N.vendido)}</div><div class="sub num">Efectivo ${fmt(N.efectivo)}<br><span style="color:var(--okink)">Transferencias ${fmt(N.transfer)}</span></div></div>
         <div><div class="lbl">Sueldos a pagar</div><div class="bebas num" style="font-size:36px">${fmt(N.sueldos)}</div><div class="sub">Fijo + comisión<br>de ${cajas.length} RRPP</div></div>
       </div>
     </section>
@@ -425,16 +436,15 @@ function vVenta(){
     <section class="stack"><div class="row-between"><h2 class="lbl">2 · Entrada</h2>${c?'<span class="sub">quedan en su cupo</span>':''}</div>
       <div class="grid2" role="group" aria-label="Tipo de entrada">${visibles.map(x=>{const q=quedan(x);return `<button class="opt tall" ${pr(V.tipo===x.id)} data-a="vTipo" data-v="${x.id}"><span style="text-align:left">${esc(x.label)}</span><span class="q num" ${q!==''&&q<=0?'style="color:'+(V.tipo===x.id?'#fff':'var(--badink)')+';font-weight:700"':''}>${q===''?'':q}</span></button>`}).join('')}</div>
       ${ocultos>0?`<button class="link" data-a="vMas">Ver ${ocultos} tipos más (Silent, P. Residente…)</button>`:''}</section>
-    ${t&&!t.free?`<section class="stack"><h2 class="lbl">3 · Precio</h2>
-      <div class="grid2" role="group" aria-label="Precio">${Array.from({length:nPrecios()},(_,i)=>`<button class="opt tall num" ${pr(V.tier===i)} data-a="vTier" data-v="${i}" style="justify-content:center">P${i+1} · ${precio(V.tipo,i)?fmt(precio(V.tipo,i)):'sin precio'}</button>`).join('')}</div>
-      ${!p?'<div class="status warn">Este tipo no tiene precio cargado. Cargalo en Ajustes.</div>':''}</section>`:''}
+    ${t&&!t.free?(()=>{const ops=opcionesPrecio(V.tipo);return `<section class="stack"><h2 class="lbl">3 · Precio</h2>
+      ${ops.length?`<div class="grid2" role="group" aria-label="Precio">${ops.map(o=>`<button class="opt tall num" ${pr(V.tier===o.i)} data-a="vTier" data-v="${o.i}" style="justify-content:center;white-space:nowrap;padding:0 8px">Precio ${o.i+1} · ${fmt(o.v)}</button>`).join('')}</div>`:'<div class="status warn">Este tipo no tiene precio cargado. Cargalo en Ajustes.</div>'}</section>`;})():''}
     <section class="stack"><h2 class="lbl">${t&&!t.free?'4':'3'} · Cantidad</h2>
       <div class="stepper"><button data-a="vQty" data-v="-1" aria-label="Restar uno" style="background:var(--bg)">${I.minus}</button>
       <span class="big num" style="font-size:72px" aria-live="polite">${V.qty}</span>
       <button data-a="vQty" data-v="1" aria-label="Sumar uno" style="background:var(--ink);color:#fff">${I.plus}</button></div></section>
   </main>
   <div class="dock stack" style="border-top:2px solid var(--ink);background:var(--surf);gap:10px">
-    <div class="sub" style="font-size:15px">${listo?`${V.qty} × ${esc(t.label)}${t.free?'':' · P'+(V.tier+1)} · ${esc(corto(c.nombre))}`:(!c?'Elegí la caja':!t?'Elegí el tipo de entrada':'Falta el precio')}</div>
+    <div class="sub" style="font-size:15px">${listo?`${V.qty} × ${esc(t.label)}${t.free?'':' · Precio '+(V.tier+1)} · ${esc(corto(c.nombre))}`:(!c?'Elegí la caja':!t?'Elegí el tipo de entrada':'Falta el precio')}</div>
     <button class="cta num" data-a="confirmarVenta" ${listo?'':'disabled'}>Confirmar${listo&&!t.free?' · '+fmt(tot):''}</button>
   </div>`;
 }
@@ -451,7 +461,7 @@ function vCaja(){
   const efCobrado=k.vendido-k.transfer;
   const sub=k.reabierta?'Volver a rendir':k.rendida?'Caja rendida':'';
   const filaMov=m=>{let txt,monto,cls='';
-    if(m.t==='venta'){const t=getT(m.tipo)||{label:m.tipo};txt=`${m.qty} ${esc(t.label)}${t.free?'':' · P'+((m.tier||0)+1)}`;monto=t.free?'free':fmt(m.total);}
+    if(m.t==='venta'){const t=getT(m.tipo)||{label:m.tipo};txt=`${m.qty} ${esc(t.label)}${t.free?'':' · Precio '+((m.tier||0)+1)}`;monto=t.free?'free':fmt(m.total);}
     else if(m.t==='transfer'){txt='<b>Transferencia</b>';monto=fmt(m.monto);cls='t-ok';}
     else if(m.t==='efectivo'){txt='Efectivo a cuenta';monto=fmt(m.monto);}
     else{txt='Gasto'+(m.desc?': '+esc(m.desc):'');monto='−'+fmt(m.monto);cls='t-bad';}
@@ -461,17 +471,17 @@ function vCaja(){
     <section class="hero" style="display:flex;flex-direction:column;gap:12px">
       <div class="row-between" style="align-items:flex-end"><div><div class="lbl">Vendido en calle</div><div class="bebas num" style="font-size:44px;line-height:1">${fmt(k.vendido)}</div></div><div style="text-align:right"><div class="lbl">Entradas</div><div class="bebas num" style="font-size:44px;line-height:1">${k.qtyPaga}</div></div></div>
       <div class="grid2" style="gap:8px">
-        <div style="background:#E3F1E8;padding:10px 12px"><div class="lbl" style="color:var(--okink)">Transferencias</div><div class="bebas num" style="font-size:28px">${fmt(k.transfer)}</div></div>
-        <div style="background:#ECEAE4;padding:10px 12px"><div class="lbl">Efectivo cobrado</div><div class="bebas num" style="font-size:28px">${fmt(efCobrado)}</div></div>
+        <div style="background:var(--transfer);padding:10px 12px"><div class="lbl" style="color:var(--okink)">Transferencias</div><div class="bebas num" style="font-size:28px">${fmt(k.transfer)}</div></div>
+        <div style="background:var(--cash);padding:10px 12px"><div class="lbl">Efectivo cobrado</div><div class="bebas num" style="font-size:28px">${fmt(efCobrado)}</div></div>
       </div>
       <div class="row-between" style="border-top:1px solid var(--line);padding-top:10px"><span style="font-weight:700">Debe entregar en efectivo</span><span class="bebas num" style="font-size:28px">${fmt(k.aEntregar)}</span></div>
     </section>
 
     <section class="stack box" style="padding:12px;gap:10px">
-      <div class="grid3" role="group" aria-label="Qué cargar">${Object.entries(CARGAS).map(([key,v])=>`<button class="opt" ${pr(ct===key)} data-a="tipoCarga" data-v="${key}" style="justify-content:center;font-size:14px;padding:0 6px;min-height:44px">${v.lbl==='Efectivo a cuenta'?'Efectivo':v.lbl}</button>`).join('')}</div>
+      <div class="seg" role="group" aria-label="Qué cargar">${Object.entries(CARGAS).map(([key,v])=>`<button ${pr(ct===key)} data-a="tipoCarga" data-v="${key}">${v.lbl==='Efectivo a cuenta'?'Efectivo':v.lbl}</button>`).join('')}</div>
       <div style="display:flex;gap:8px">
         <input class="in num" id="qMonto" inputmode="decimal" placeholder="Monto $" autocomplete="off" style="flex:1;min-width:0;font-size:20px;font-weight:700" data-enter="anotarRapido">
-        <button class="btn" data-a="anotarRapido" style="background:var(--ink);color:#fff;min-width:110px">Anotar</button>
+        <button class="btn ink" data-a="anotarRapido" style="min-width:110px">Anotar</button>
       </div>
       ${ct==='gasto'?`<input class="in" id="qDesc" placeholder="¿En qué? (nafta, hielo…)" autocomplete="off" data-enter="anotarRapido">`:''}
       <p class="note">${ct==='transfer'?'Cada transferencia que entra a su Mercado Pago, de a una.':ct==='efectivo'?'Plata en efectivo que te da antes de rendir.':'Lo que gastó de la plata de la caja.'}</p>
@@ -522,9 +532,10 @@ function vRendir(){
         <div class="m sep"><span class="grow">− Gastos</span><span>${fmt(k.gastos)}</span></div>
         <div style="min-height:60px"><span class="grow" style="font-weight:700">Efectivo a entregar</span><span class="bebas" style="font-size:34px">${fmt(k.aEntregar)}</span></div>
       </div>
-      ${k.alpogo?`<p class="note">Las ${k.alpogo} entradas de Alpogo se cobran online: no pasan por esta caja.</p>`:''}
+      ${k.alpogo?`<p class="note">${k.alpogo===1?'La entrada de Alpogo se cobra':'Las '+k.alpogo+' entradas de Alpogo se cobran'} online: no pasa por esta caja.</p>`:''}
     </section>
-    <section class="stack"><label class="lbl" for="entrego">2 · Cuánto entregó${k.reabierta?' en total':' ahora'}</label>
+    <section class="stack"><label class="lbl" for="entrego">2 · Efectivo que entregó${k.reabierta?' en total':''}</label>
+      <p class="note" style="margin-top:-4px">Ya está puesto lo que corresponde. Cambialo solo si entregó otro monto.</p>
       <input class="in bigin num" id="entrego" inputmode="decimal" placeholder="$0" value="${esc(entVal)}" data-i="entrego" autocomplete="off">
       <div id="statEntrego" aria-live="polite">${statusRendir(k,entVal,true)}</div>
     </section>
@@ -551,10 +562,10 @@ function vEditCaja(){
   return hdrBack(nueva?'Nuevo RRPP':'Editar RRPP',nueva?'':esc(d.nombre),nueva?'tabCajas':'volverCaja')+`<main>
     <div class="field"><label for="eNom">Nombre</label><input class="in" id="eNom" value="${esc(d.nombre)}" placeholder="Nombre y apellido" autocomplete="off"></div>
     <div class="grid2">
-      <div class="field"><label for="eCom">$ por entrada vendida (calle)</label><input class="in num" id="eCom" inputmode="numeric" value="${esc(d.comisTicket)}" placeholder="0"></div>
+      <div class="field"><label for="eCom">Por entrada (calle)</label><input class="in num" id="eCom" inputmode="numeric" value="${esc(d.comisTicket)}" placeholder="0"></div>
       <div class="field"><label for="eFijo">Sueldo fijo</label><input class="in num" id="eFijo" inputmode="numeric" value="${esc(d.fijo)}" placeholder="0"></div>
     </div>
-    <div class="field"><label for="eAlp">$ por entrada de Alpogo</label><input class="in num" id="eAlp" inputmode="numeric" value="${esc(d.comisAlpogo!=null?d.comisAlpogo:COMIS_ALPOGO_DEF)}"></div>
+    <div class="field"><label for="eAlp">Por entrada (Alpogo)</label><input class="in num" id="eAlp" inputmode="numeric" value="${esc(d.comisAlpogo!=null?d.comisAlpogo:COMIS_ALPOGO_DEF)}"></div>
     <section class="stack"><h2 class="lbl">Cupos que se lleva</h2>
       <div class="box">${tipos().filter(t=>!t.free).map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px;border-bottom:1px solid var(--line2)"><label for="cu_${t.id}" style="font-size:15px">${esc(t.label)}</label><input class="cupo-in num" id="cu_${t.id}" inputmode="numeric" value="${pint((d.cupos||{})[t.id])||''}" placeholder="0"></div>`).join('')}</div>
     </section>
@@ -570,7 +581,7 @@ function vCierre(){
   const cerrada=noche.estado==='cerrada';
   const nomDif=N.conDif.map(x=>`${corto(x.c.nombre)} ${difTexto(x.k.diferencia).toLowerCase()}`).join(', ');
   return `<main>
-    <div><h1 class="bebas" style="font-size:32px;line-height:1;margin:0;font-weight:400">Cierre de la noche</h1><div class="sub">${esc(fechaTxt(noche.fecha))} · ${esc(noche.nombre)}${noche.numero?' · Noche '+esc(noche.numero):''}</div></div>
+    <div><h1 class="bebas" style="font-size:32px;line-height:1;margin:0;font-weight:400">Cierre de la noche</h1><div class="sub">${esc(fechaTxt(noche.fecha))} · ${esc(noche.nombre)}</div></div>
     ${cerrada?`<div class="status ok">${I.check} Noche cerrada${noche.cerradaEn?' a las '+hhmm(noche.cerradaEn):''} · PDF enviado</div>`:''}
     <section class="stack"><div class="row-between"><h2 class="lbl">Cajas rendidas</h2><span class="num" style="font-weight:700">${N.rendidas.length} de ${cajas.length}</span></div>
       <div class="box list">${N.cs.map(({c,k})=>k.rendida?`<button data-a="rendirDirecto" data-v="${c.id}"><span class="grow">${esc(c.nombre)}</span>${estadoCaja(k)}</button>`:`<button data-a="rendirDirecto" data-v="${c.id}" style="background:var(--warnbg)"><span class="grow" style="font-weight:600">${esc(c.nombre)}</span><span class="r t-warn" style="text-decoration:underline;text-underline-offset:3px">${k.reabierta?'Volver a rendir':'Rendir ahora'}</span></button>`).join('')||'<div class="m">Sin cajas.</div>'}</div></section>
@@ -596,9 +607,9 @@ function vCierre(){
       ${N.pendientes.length?`<p class="note num">Faltan rendir ${N.pendientes.length} caja${N.pendientes.length>1?'s':''}: deberían entregar ${fmt(N.faltaRendir)} más.</p>`:''}
       <button class="btn noprint" data-a="togConteo">${U.conteo?'Cerrar conteo':N.hayConteo?'Recontar billetes':'Contar billetes'}</button>
       ${U.conteo?(()=>{const b=noche.billetes||{};return `<div class="box">${DENOMS.map(d=>`<div style="display:grid;grid-template-columns:92px 84px 1fr;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--line2)"><label for="bi_${d}" class="num" style="font-weight:600">${fmt(d)}</label><input class="cupo-in num" style="width:84px" id="bi_${d}" inputmode="numeric" value="${pint(b[d])||''}" placeholder="0" data-i="billete" data-d="${d}"><span class="num" style="text-align:right" id="bs_${d}">${pint(b[d])?fmt(d*pint(b[d])):'—'}</span></div>`).join('')}
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px"><span style="font-weight:700">Total <span class="bebas num" style="font-size:26px" id="biTot">${fmt(DENOMS.reduce((x,d)=>x+d*pint(b[d]),0))}</span></span><button class="btn" data-a="guardarBilletes" style="background:var(--ink);color:#fff">Guardar conteo</button></div></div>`;})():''}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px"><span style="font-weight:700">Total <span class="bebas num" style="font-size:26px" id="biTot">${fmt(DENOMS.reduce((x,d)=>x+d*pint(b[d]),0))}</span></span><button class="btn ink" data-a="guardarBilletes">Guardar conteo</button></div></div>`;})():''}
       <div class="box noprint" style="padding:12px;display:flex;flex-direction:column;gap:8px"><div class="lbl">Gasto del club</div>
-        <div style="display:flex;gap:8px"><input class="in num" id="gcMonto" inputmode="decimal" placeholder="Monto $" autocomplete="off" style="flex:1;min-width:0" data-enter="anotarGastoClub"><button class="btn" data-a="anotarGastoClub" style="background:var(--ink);color:#fff;min-width:100px">Anotar</button></div>
+        <div style="display:flex;gap:8px"><input class="in num" id="gcMonto" inputmode="decimal" placeholder="Monto $" autocomplete="off" style="flex:1;min-width:0" data-enter="anotarGastoClub"><button class="btn ink" data-a="anotarGastoClub" style="min-width:100px">Anotar</button></div>
         <input class="in" id="gcDesc" placeholder="¿En qué?" autocomplete="off" data-enter="anotarGastoClub"></div>
       ${vivos().filter(m=>m.t==='gastoClub').length?`<div class="box list num">${vivos().filter(m=>m.t==='gastoClub').map(m=>`<div data-mov="${m.id}"><span class="grow">${esc(m.desc||'Gasto del club')}</span><span class="r">${fmt(m.monto)}</span>${delBtn(m.id,'Borrar gasto del club')}</div>`).join('')}</div>`:''}
     </section>
@@ -618,31 +629,32 @@ function vCierre(){
 /* ---------- AJUSTES ---------- */
 function vAjustes(){
   const act=noche.tipos&&noche.tipos.length?noche.tipos:TT.map(t=>t.id);
-  const np=nPrecios();
   return `<main>
     <section class="stack" style="gap:12px"><h1 class="lbl">Evento</h1>
-      <div class="field"><label for="aNom">Nombre</label><input class="in" id="aNom" value="${esc(noche.nombre)}" data-i="nocheCampo" data-f="nombre" autocomplete="off"></div>
-      <div class="grid2"><div class="field"><label for="aFec">Fecha</label><input class="in" id="aFec" type="date" value="${esc(noche.fecha)}" data-i="nocheCampo" data-f="fecha"></div>
-      <div class="field"><label for="aNum">Noche N°</label><input class="in num" id="aNum" inputmode="numeric" value="${esc(noche.numero||'')}" data-i="nocheCampo" data-f="numero"></div></div>
+      <div class="field"><label for="aNom">Nombre del evento</label><input class="in" id="aNom" value="${esc(noche.nombre)}" data-i="nocheCampo" data-f="nombre" autocomplete="off"></div>
+      <div class="field"><label for="aFec">Fecha</label><input class="in" id="aFec" type="date" value="${esc(noche.fecha)}" data-i="nocheCampo" data-f="fecha"></div>
     </section>
     <section class="stack"><h2 class="lbl">RRPP de la noche (${cajas.length})</h2>
-      ${cajas.length?`<div class="box list">${cajas.map(c=>`<button data-a="editCajaId" data-v="${c.id}"><span class="grow">${esc(c.nombre)}</span><span class="m num" style="font-size:14px">${fmt(c.fijo)} + ${fmt(c.comisTicket)}/ent.</span>${I.chev}</button>`).join('')}</div>`:''}
+      ${cajas.length?`<div class="box list">${cajas.map(c=>`<button data-a="editCajaId" data-v="${c.id}"><span class="grow">${esc(c.nombre)}</span><span class="m num" style="font-size:13px;text-align:right;line-height:1.3">${fmt(c.fijo)} fijo<br>${fmt(c.comisTicket)} c/u</span>${I.chev}</button>`).join('')}</div>`:''}
       <button class="btn" data-a="nuevaCaja">+ Agregar RRPP</button></section>
     <section class="stack"><h2 class="lbl">Precios</h2>
-      <div class="grid2" role="group" aria-label="Cantidad de precios"><button class="opt" ${pr(np===1)} data-a="numPrecios" data-v="1" style="justify-content:center">Un precio</button><button class="opt" ${pr(np===2)} data-a="numPrecios" data-v="2" style="justify-content:center">P1 y P2</button></div>
-      <div class="box">${tipos().filter(t=>!t.free).map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 14px;border-bottom:1px solid var(--line2)"><span style="flex-grow:1;font-size:15px">${esc(t.label)}</span>${Array.from({length:np},(_,i)=>`<input class="cupo-in num" style="width:${np===1?110:96}px;min-height:48px" inputmode="numeric" aria-label="Precio P${i+1} ${esc(t.label)}" id="pr_${t.id}_${i}" value="${precio(t.id,i)?precio(t.id,i).toLocaleString('es-AR'):''}" placeholder="P${i+1}" data-i="precio" data-t="${t.id}" data-n="${i}">`).join('')}</div>`).join('')}</div>
-      <p class="note">Se guardan solos al escribir.</p>
+      <div class="box">${tipos().filter(t=>!t.free).map(t=>{const ps=preciosDe(t.id);const lista=ps.length?ps:[0];
+        return `<div style="padding:10px 14px;border-bottom:1px solid var(--line2);display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;justify-content:space-between">
+          <div style="display:flex;flex-direction:column;flex:1 1 110px;min-width:0"><span style="font-weight:600;font-size:15px">${esc(t.label)}</span><button class="link" data-a="masPrecio" data-v="${t.id}" style="min-height:32px;padding:0;font-size:13px">+ otro precio</button></div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;justify-content:flex-end">
+            ${lista.map((v,i)=>`<div class="field" style="gap:4px"><label for="pr_${t.id}_${i}" style="font-size:12px;font-weight:700;color:var(--ink2)">PRECIO ${i+1}</label><input class="cupo-in num" style="width:112px;min-height:46px" inputmode="numeric" id="pr_${t.id}_${i}" value="${v?v.toLocaleString('es-AR'):''}" placeholder="$" data-i="precio" data-t="${t.id}" data-n="${i}"></div>`).join('')}
+          </div></div>`;}).join('')}</div>
+      <p class="note">Se guardan solos al escribir. Si un tipo tiene un solo precio, en la venta se elige solo.</p>
     </section>
-    <section class="stack"><h2 class="lbl">Tipos de entrada que se venden</h2>
-      <div class="grid2">${TT.map(t=>`<button class="opt tog" ${pr(act.includes(t.id))} data-a="togTipo" data-v="${t.id}" style="font-size:15px">${esc(t.label)}${act.includes(t.id)?I.check:''}</button>`).join('')}</div></section>
+    <section class="stack"><h2 class="lbl">Tipos de entrada que se venden hoy</h2>
+      <div class="grid2">${TT.map(t=>`<button class="opt tog" ${pr(act.includes(t.id))} data-a="togTipo" data-v="${t.id}" style="font-size:15px;font-weight:600;text-align:left">${esc(t.label)}${act.includes(t.id)?I.check:''}</button>`).join('')}</div></section>
     <section class="stack" style="border-top:2px solid var(--ink);padding-top:16px"><h2 class="lbl">Nueva noche</h2>
       <p class="note">Guarda esta noche en el historial (no se borra nada) y abre una nueva con los mismos RRPP, sueldos y precios, en cero.</p>
       ${U.nueva?`<div class="box stack" style="padding:12px;gap:10px">
         <div class="field"><label for="nnN">Nombre del evento</label><input class="in" id="nnN" placeholder="Ej: Bresh" autocomplete="off"></div>
-        <div class="grid2"><div class="field"><label for="nnF">Fecha</label><input class="in" id="nnF" type="date" value="${hoyLocal()}"></div>
-        <div class="field"><label for="nnNum">Noche N°</label><input class="in num" id="nnNum" inputmode="numeric" value="${noche.numero?(+noche.numero+1):''}"></div></div>
-        <div class="grid2"><button class="btn" data-a="sheetNuevaNoche">Cancelar</button><button class="btn" data-a="crearNuevaNoche" style="background:var(--ink);color:#fff">Empezar</button></div></div>`
-      :`<button class="btn" data-a="sheetNuevaNoche">Empezar noche nueva</button>`}
+        <div class="field"><label for="nnF">Fecha</label><input class="in" id="nnF" type="date" value="${hoyLocal()}"></div>
+        <div class="grid2"><button class="btn" data-a="sheetNuevaNoche">Cancelar</button><button class="btn ink" data-a="crearNuevaNoche">Empezar</button></div></div>`
+      :`<button class="btn ink" data-a="sheetNuevaNoche">Empezar nueva noche</button>`}
       <button class="link" data-a="descartarNoche" style="color:var(--badink);margin-top:8px">Descartar esta noche (prueba o error)</button></section>
   </main>`;
 }
@@ -670,13 +682,6 @@ function renderOverlay(){
       <div class="box">${DENOMS.map(d=>`<div style="display:grid;grid-template-columns:92px 84px 1fr;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--line2)"><label for="bi_${d}" class="num" style="font-weight:600">${fmt(d)}</label><input class="cupo-in num" style="width:84px" id="bi_${d}" inputmode="numeric" value="${pint(b[d])||''}" placeholder="0" data-i="billete" data-d="${d}"><span class="num" style="text-align:right" id="bs_${d}">${pint(b[d])?fmt(d*pint(b[d])):'—'}</span></div>`).join('')}</div>
       <div class="row-between" style="font-size:17px;font-weight:700"><span>Total contado</span><span class="bebas num" style="font-size:32px" id="biTot">${fmt(DENOMS.reduce((x,d)=>x+d*pint(b[d]),0))}</span></div>
       <div class="grid2"><button class="cta2" data-a="cerrarSheet">Cancelar</button><button class="cta" data-a="guardarBilletes" style="font-size:26px;min-height:64px">${I.check} Listo</button></div>`;
-  }else if(s.k==='nuevaNoche'){
-    inner=`<h2 class="ttl" style="font-size:28px;margin:0" id="shT">Noche nueva</h2>
-      <p class="note" style="font-size:15px">La noche actual queda guardada en el historial. Se copian los RRPP, sueldos, cupos y precios.</p>
-      <div class="field"><label for="nnN">Nombre del evento</label><input class="in" id="nnN" placeholder="Ej: Bresh" autocomplete="off"></div>
-      <div class="grid2"><div class="field"><label for="nnF">Fecha</label><input class="in" id="nnF" type="date" value="${hoyLocal()}"></div>
-      <div class="field"><label for="nnNum">Noche N°</label><input class="in num" id="nnNum" inputmode="numeric" value="${noche.numero?(+noche.numero+1):''}"></div></div>
-      <div class="grid2"><button class="cta2" data-a="cerrarSheet">Cancelar</button><button class="cta" data-a="crearNuevaNoche" style="font-size:24px;min-height:64px">Empezar</button></div>`;
   }else if(s.k==='confirm'){
     inner=`<h2 class="ttl" style="font-size:26px;margin:0" id="shT">${esc(s.titulo)}</h2><p class="note" style="font-size:15px">${esc(s.texto)}</p>
       <div class="grid2"><button class="cta2" data-a="cerrarSheet">Cancelar</button><button class="cta ${s.peligro===false?'':'danger'}" data-a="confirmarSi" style="font-size:24px;min-height:64px">${esc(s.si)}</button></div>`;
@@ -693,8 +698,13 @@ function renderToast(){
   if(!U.toast){const t=box.querySelector('.toast');if(t){t.classList.add('out');setTimeout(()=>{if(!U.toast)box.innerHTML='';},160);}return;}
   const had=box.querySelector('.toast:not(.out)');
   box.innerHTML=`<div class="toast ${U.toast.err?'err':''} ${had?'':'in'}"><span>${esc(U.toast.msg)}</span>${U.toast.undo?`<button data-a="deshacer">Deshacer</button>`:''}</div>`;
+  posToast();
   if(!had){const t=box.querySelector('.toast');requestAnimationFrame(()=>requestAnimationFrame(()=>t&&t.classList.remove('in')));}
 }
+// El aviso se ubica justo encima de los botones fijos de abajo (dock / pestañas), en cualquier pantalla
+function posToast(){const el=document.querySelector('#toastBox .toast');if(!el)return;const H=innerHeight;
+  const tops=[...document.querySelectorAll('.dock,nav.tabs')].map(e=>e.getBoundingClientRect()).filter(r=>r.height&&r.top<H&&r.bottom>H-140).map(r=>r.top);
+  el.style.bottom=(tops.length?H-Math.min(...tops):0)+12+'px';}
 function toast(msg,o){o=o||{};U.toast={msg,undo:!!o.undo,err:!!o.err};clearTimeout(toastT);toastT=setTimeout(()=>{U.toast=null;renderToast();},o.undo?6000:(o.err?5000:2600));renderToast();}
 document.addEventListener('visibilitychange',()=>{ // con el celu bloqueado no se pierde el "Deshacer"
   if(document.hidden){clearTimeout(toastT);}else if(U.toast){clearTimeout(toastT);toastT=setTimeout(()=>{U.toast=null;renderToast();},3000);}
@@ -728,7 +738,7 @@ function armarPdf(){
     doc.setFontSize(opt.fsm||16);doc.text(monto,W-M-4,y+h/2+2,{align:'right'});doc.setTextColor(...INK);y+=h;};
   const linea=(label,monto,opt)=>{opt=opt||{};doc.setFont('helvetica',opt.bold?'bold':'normal');doc.setFontSize(opt.fs||11);doc.setTextColor(...(opt.color||INK));doc.text(label,M+(opt.ind||4),y);doc.text(monto,W-M-4,y,{align:'right'});doc.setTextColor(...INK);y+=opt.gap||6.5;};
   const encabezado=(sub)=>{doc.setFillColor(...INK);doc.rect(0,0,W,22,'F');doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(17);doc.text('ZEBRA CLUB · RENDICIÓN DE CALLE',M,10.5);
-    doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.text(`${fechaTxt(noche.fecha)} · ${noche.nombre||''}${noche.numero?' · Noche '+noche.numero:''}`,M,17.5);doc.text(sub,W-M,17.5,{align:'right'});doc.setTextColor(...INK);y=32;};
+    doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.text(`${fechaTxt(noche.fecha)} · ${noche.nombre||''}`,M,17.5);doc.text(sub,W-M,17.5,{align:'right'});doc.setTextColor(...INK);y=32;};
 
   // ================= HOJA 1 =================
   encabezado('Rendición final');
@@ -825,7 +835,7 @@ const A={
   ventaDesde(id){U.venta={caja:id,tipo:null,tier:0,qty:1,verMas:false,desde:'caja'};U.view='venta';window.scrollTo(0,0);render();},
   cerrarVenta(){U.view=U.venta.desde==='caja'?'caja':null;render();},
   vCaja(id){U.venta.caja=id;render();},
-  vTipo(id){U.venta.tipo=id;if(U.venta.tier>=nPrecios())U.venta.tier=0;render();},
+  vTipo(id){U.venta.tipo=id;const ops=opcionesPrecio(id);U.venta.tier=ops.length?ops[0].i:0;render();},
   vTier(i){U.venta.tier=+i;render();},
   vQty(d){U.venta.qty=Math.max(1,Math.min(99,U.venta.qty+(+d)));render();},
   vMas(){U.venta.verMas=true;render();},
@@ -852,7 +862,7 @@ const A={
     w(ref.set({t:ct,caja:U.caja,monto,desc,ts:TS(),anulada:false}),'el movimiento');
     reabrirSiRendida(U.caja);
     inp.value='';if(d)d.value='';U.flash=ref.id;
-    toast(CARGAS[ct].lbl+' anotada: '+fmt(monto));
+    toast(({transfer:'Transferencia anotada',efectivo:'Efectivo anotado',gasto:'Gasto anotado'}[ct]||'Anotado')+': '+fmt(monto));
     render();const again=$('#qMonto');if(again)again.focus({preventScroll:true});
   },
   anotarGastoClub(){const inp=$('#gcMonto');const monto=pint(inp&&inp.value);if(!monto){if(inp)inp.focus();return;}const d=$('#gcDesc');
@@ -871,7 +881,9 @@ const A={
   cerrarSheet(){U.sheet=null;renderOverlay();},
   confirmarSi(){const f=U.sheet&&U.sheet.fn;U.sheet=null;if(f)f();render();},
   irRendir(){const c=cajas.find(x=>x.id===U.caja);let guardado='';try{guardado=localStorage.getItem('calle_rend_'+U.caja)||'';}catch(e){}
-    U.rendir={entrego:c&&c.entrego!=null?Number(c.entrego).toLocaleString('es-AR'):guardado};U.view='rendir';window.scrollTo(0,0);render();},
+    // Precargado con lo que debe entregar: si cuadra, un toque y cierra; solo se corrige si entregó distinto
+    const deb=c?Math.max(0,Math.round(calcCaja(c).aEntregar)).toLocaleString('es-AR'):'';
+    U.rendir={entrego:c&&c.entrego!=null&&!c.reabierta?Number(c.entrego).toLocaleString('es-AR'):(guardado||deb)};U.view='rendir';window.scrollTo(0,0);render();},
   rendirDirecto(id){U.caja=id;A.irRendir();},
   pago(v){const c=cajas.find(x=>x.id===U.caja);if(!c)return;updCaja(c.id,{pago:c.pago===v?null:v});},
   cerrarCaja(){
@@ -899,9 +911,9 @@ const A={
     U.sheet={k:'confirm',titulo:'¿Quitar a '+c.nombre+'?',texto:'No tiene nada cargado en esta noche.',si:'Quitar',fn:()=>{w(nocheRef().collection('cajas').doc(c.id).delete());U.view=null;U.tab='ajustes';}};renderOverlay();},
   sheetBilletes(){A.togConteo();},
   guardarBilletes(){const upd={};DENOMS.forEach(d=>{const el=$('#bi_'+d);upd['billetes.'+d]=pint(el?el.value:0);});updNoche(upd);U.conteo=false;toast('Conteo guardado');if(document.activeElement)document.activeElement.blur();render();},
-  numPrecios(v){updNoche({numPrecios:+v});},
+  masPrecio(tid){const ps=preciosDe(tid);const arr=(ps.length?ps:[0]).concat([0]);updNoche({['precios.'+tid]:arr});setTimeout(()=>{const el=$('#pr_'+tid+'_'+(arr.length-1));if(el)el.focus();},120);},
   togTipo(id){const act=noche.tipos&&noche.tipos.length?noche.tipos.slice():TT.map(t=>t.id);const i=act.indexOf(id);if(i>=0){if(act.length>1)act.splice(i,1);}else act.push(id);updNoche({tipos:act});},
-  imprimir(){if(!pdfListo()){toast('Preparando el PDF… tocá de nuevo en unos segundos.',{err:true});cargarPdf().catch(()=>{});return;}descargarPdf(armarPdf());},
+  imprimir(){compartirPdf();},
   enviarAdmin(){
     const N=calcNoche();
     if(N.sueldosSinDef>0){toast('Falta definir de dónde sale el sueldo de algún RRPP',{err:true});return;}
@@ -915,7 +927,7 @@ const A={
     if(U.busy)return;
     const nombre=$('#nnN').value.trim();if(!nombre){$('#nnN').focus();return;}
     U.busy=true;
-    const fecha=$('#nnF').value||hoyLocal(),numero=$('#nnNum').value.trim();
+    const fecha=$('#nnF').value||hoyLocal(),numero='';
     const viejo=noche,viejoRef=nocheRef(),viejasCajas=cajas.slice();
     const ref=db.collection('calle_noches').doc();
     const batch=db.batch();
@@ -932,7 +944,7 @@ const A={
     U.busy=true;
     const ref=db.collection('calle_noches').doc();
     const batch=db.batch();
-    batch.set(ref,{nombre,fecha:$('#nF').value||hoyLocal(),numero:$('#nNum').value.trim(),tipos:null,precios:{},numPrecios:1,billetes:{},estado:'abierta',creada:TS()});
+    batch.set(ref,{nombre,fecha:$('#nF').value||hoyLocal(),numero:'',tipos:null,precios:{},numPrecios:1,billetes:{},estado:'abierta',creada:TS()});
     batch.set(db.collection('config').doc('calle'),{nocheActivaId:ref.id});
     w(batch.commit(),'la noche').finally(()=>{U.busy=false;});
     U.tab='ajustes';render();
@@ -958,6 +970,10 @@ document.addEventListener('click',e=>{
   const a=el.dataset.a;if(A[a]&&!el.disabled){e.preventDefault();A[a](el.dataset.v);}
 });
 let precioT={},campoT={},rendT=null;
+// Con el teclado abierto se esconde la barra de abajo y los botones dejan de flotar (no tapan el campo)
+const esTexto=el=>el&&(el.tagName==='TEXTAREA'||(el.tagName==='INPUT'&&!/^(button|checkbox|radio|submit)$/.test(el.type)));
+document.addEventListener('focusin',e=>{if(esTexto(e.target))document.body.classList.add('kb');});
+document.addEventListener('focusout',()=>{setTimeout(()=>{if(!esTexto(document.activeElement))document.body.classList.remove('kb');},120);});
 document.addEventListener('input',e=>{
   const el=e.target,i=el.dataset.i;if(!i)return;
   if(i==='entrego'){
@@ -968,7 +984,7 @@ document.addEventListener('input',e=>{
     clearTimeout(rendT);rendT=setTimeout(()=>{const c2=cajas.find(x=>x.id===U.caja);const s=$('#statEntrego');if(c2&&s)s.innerHTML=statusRendir(calcCaja(c2),U.rendir.entrego,true);},650);
   }
   else if(i==='precio'){const t=el.dataset.t,n=+el.dataset.n,v=pint(el.value);clearTimeout(precioT[t+n]);precioT[t+n]=setTimeout(()=>{
-      const arr=[];for(let j=0;j<Math.max(nPrecios(),n+1);j++)arr[j]=j===n?v:precio(t,j);
+      const cur=preciosDe(t);const arr=[];for(let j=0;j<Math.max(cur.length,n+1);j++)arr[j]=j===n?v:(cur[j]||0);
       updNoche({['precios.'+t]:arr});},500);}
   else if(i==='nocheCampo'){const f=el.dataset.f,v=el.value;clearTimeout(campoT[f]);campoT[f]=setTimeout(()=>updNoche({[f]:v}),500);}
   else if(i==='billete'){const d=+el.dataset.d,v=pint(el.value);$('#bs_'+d).textContent=v?fmt(d*v):'—';let tot=0;DENOMS.forEach(x=>{const inp=$('#bi_'+x);tot+=x*pint(inp?inp.value:0);});$('#biTot').textContent=fmt(tot);}

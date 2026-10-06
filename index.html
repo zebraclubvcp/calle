@@ -368,7 +368,7 @@ function vNoche(){
   const N=calcNoche();
   const ord=tipos().map(t=>({t,q:(N.porTipo[t.id]||{}).qty||0})).filter(x=>x.q>0).sort((a,b)=>b.q-a.q);
   const max=ord.length?ord[0].q:1;
-  const extra=[N.qtyFree?`+ ${N.qtyFree} free (${N.qtyPaga+N.qtyFree} personas)`:'',N.alpogo?`+ ${N.alpogo} por Alpogo`:''].filter(Boolean).join(' · ');
+  const extra=[N.qtyFree?`+ ${N.qtyFree} free (${N.qtyPaga+N.qtyFree} personas)`:'',N.alpogo?`${N.alpogo} por Alpogo (las cobra la ticketera)`:''].filter(Boolean).join(' · ');
   return `<main>
     <div class="row-between"><h1 class="bebas" style="font-size:30px;margin:0;font-weight:400">${esc(fechaTxt(noche.fecha))} · ${esc(noche.nombre)}</h1><span class="sub" style="font-weight:600;white-space:nowrap">${noche.numero?'Noche '+esc(noche.numero):''}</span></div>
     <section class="hero stack" style="gap:14px">
@@ -454,9 +454,9 @@ function vCaja(){
       <div><div class="lbl">Vendido en calle</div><div class="bebas num" style="font-size:38px;line-height:1.5">${fmt(k.vendido)}</div><div class="sub num">Sueldo ${fmt(k.comision)}</div></div>
     </section>
     <section class="stack">
-      <h2 class="lbl">Alpogo (ventas online)</h2>
+      <h2 class="lbl">Alpogo · solo para su comisión</h2>
       <div class="box" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 14px">
-        <span style="font-size:15px">Entradas vendidas por su link</span>
+        <span style="font-size:15px">Vendidas por su link<br><span class="sub">La plata la cobra Alpogo, no esta caja</span></span>
         <div style="display:flex;align-items:center;gap:6px"><button class="btn" data-a="alpogo" data-v="-1" aria-label="Restar una de Alpogo" style="width:48px;padding:0;display:flex;align-items:center;justify-content:center">${I.minus}</button><span class="bebas num" style="font-size:30px;min-width:36px;text-align:center" aria-live="polite">${k.alpogo}</span><button class="btn" data-a="alpogo" data-v="1" aria-label="Sumar una de Alpogo" style="width:48px;padding:0;display:flex;align-items:center;justify-content:center">${I.plus}</button></div>
       </div>
     </section>
@@ -525,11 +525,11 @@ function vRendir(){
 function vEditCaja(){
   const c=U.caja?cajas.find(x=>x.id===U.caja):null;
   const nueva=!c;
-  const d=c||{nombre:'',comisTicket:'',fijo:'',cupos:{},comisAlpogo:COMIS_ALPOGO_DEF};
+  const d=c||{nombre:'',comisTicket:COMIS_ALPOGO_DEF,fijo:'',cupos:{},comisAlpogo:COMIS_ALPOGO_DEF};
   return hdrBack(nueva?'Nuevo RRPP':'Editar RRPP',nueva?'':esc(d.nombre),nueva?'tabCajas':'volverCaja')+`<main>
     <div class="field"><label for="eNom">Nombre</label><input class="in" id="eNom" value="${esc(d.nombre)}" placeholder="Nombre y apellido" autocomplete="off"></div>
     <div class="grid2">
-      <div class="field"><label for="eCom">$ por entrada (calle)</label><input class="in num" id="eCom" inputmode="numeric" value="${esc(d.comisTicket)}" placeholder="0"></div>
+      <div class="field"><label for="eCom">$ por entrada vendida (calle)</label><input class="in num" id="eCom" inputmode="numeric" value="${esc(d.comisTicket)}" placeholder="0"></div>
       <div class="field"><label for="eFijo">Sueldo fijo</label><input class="in num" id="eFijo" inputmode="numeric" value="${esc(d.fijo)}" placeholder="0"></div>
     </div>
     <div class="field"><label for="eAlp">$ por entrada de Alpogo</label><input class="in num" id="eAlp" inputmode="numeric" value="${esc(d.comisAlpogo!=null?d.comisAlpogo:COMIS_ALPOGO_DEF)}"></div>
@@ -549,14 +549,14 @@ function vCierre(){
   const nomDif=N.conDif.map(x=>`${corto(x.c.nombre)} ${difTexto(x.k.diferencia).toLowerCase()}`).join(', ');
   return `<main>
     <div><h1 class="bebas" style="font-size:32px;line-height:1;margin:0;font-weight:400">Cierre de la noche</h1><div class="sub">${esc(fechaTxt(noche.fecha))} · ${esc(noche.nombre)}${noche.numero?' · Noche '+esc(noche.numero):''}</div></div>
-    ${cerrada?`<div class="status ok">${I.check} Noche enviada a administración${noche.cerradaEn?' · '+hhmm(noche.cerradaEn):''}</div>`:''}
+    ${cerrada?`<div class="status ok">${I.check} Noche cerrada${noche.cerradaEn?' a las '+hhmm(noche.cerradaEn):''} · PDF enviado</div>`:''}
     <section class="stack"><div class="row-between"><h2 class="lbl">Cajas rendidas</h2><span class="num" style="font-weight:700">${N.rendidas.length} de ${cajas.length}</span></div>
       <div class="box list">${N.cs.map(({c,k})=>k.rendida?`<button data-a="rendirDirecto" data-v="${c.id}"><span class="grow">${esc(c.nombre)}</span>${estadoCaja(k)}</button>`:`<button data-a="rendirDirecto" data-v="${c.id}" style="background:var(--warnbg)"><span class="grow" style="font-weight:600">${esc(c.nombre)}</span><span class="r t-warn" style="text-decoration:underline;text-underline-offset:3px">${k.reabierta?'Volver a rendir':'Rendir ahora'}</span></button>`).join('')||'<div class="m">Sin cajas.</div>'}</div></section>
     <section class="stack"><h2 class="lbl">Entradas</h2>
       <div class="box"><table class="t num"><thead><tr><th>Tipo</th><th>Cant.</th><th>Total</th></tr></thead><tbody>
       ${filasTipo.map(x=>`<tr${x.t.free?' style="color:var(--ink2)"':''}><td>${esc(x.t.label)}</td><td>${x.d.qty}</td><td>${x.t.free?'—':fmt(x.d.total)}</td></tr>`).join('')}
       <tr class="tot"><td>Total calle</td><td>${N.qtyPaga+N.qtyFree}</td><td>${fmt(N.vendido)}</td></tr>
-      ${N.alpogo?`<tr style="color:var(--ink2)"><td>Alpogo (online, aparte)</td><td>${N.alpogo}</td><td>—</td></tr>`:''}</tbody></table></div></section>
+      ${N.alpogo?`<tr style="color:var(--ink2)"><td>Alpogo (lo cobra la ticketera)</td><td>${N.alpogo}</td><td>—</td></tr>`:''}</tbody></table></div></section>
     <section class="stack"><h2 class="lbl">Ventas de calle</h2>
       <div class="box list num">
         <div><span class="grow">Cobrado en efectivo</span><span class="r">${fmt(N.efectivo)}</span></div>
@@ -585,7 +585,7 @@ function vCierre(){
       <div class="box list num">${N.cs.map(({c,k})=>`<div><span class="grow">${esc(c.nombre)}</span><span class="m" style="font-size:13px">${c.pago==='caja'?'caja':c.pago==='zebra'?'Zebra':'—'}</span><span class="r">${fmt(k.comision)}</span></div>`).join('')}</div>
     </section>
   </main>
-  <div class="dock split wide tabs-on noprint"><button class="cta2" data-a="imprimir">PDF</button><button class="cta" data-a="enviarAdmin" style="font-size:22px;min-height:64px">${cerrada?'Reenviar cierre':'Enviar a administración'}</button></div>`;
+  <div class="dock split wide tabs-on noprint"><button class="cta2" data-a="imprimir">PDF</button><button class="cta" data-a="enviarAdmin" style="font-size:22px;min-height:64px">${cerrada?'Reenviar por WhatsApp':'Enviar por WhatsApp'}</button></div>`;
 }
 
 /* ---------- AJUSTES ---------- */
@@ -667,6 +667,120 @@ document.addEventListener('visibilitychange',()=>{ // con el celu bloqueado no s
   if(document.hidden){clearTimeout(toastT);}else if(U.toast){clearTimeout(toastT);toastT=setTimeout(()=>{U.toast=null;renderToast();},3000);}
 });
 
+/* ================= PDF DE CIERRE (para mandar por WhatsApp) ================= */
+const PDF_LIBS=['https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'];
+let pdfReady=null;
+function cargarPdf(){
+  if(pdfReady)return pdfReady;
+  pdfReady=PDF_LIBS.reduce((pr,src)=>pr.then(()=>new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('pdf'));document.head.appendChild(s);})),Promise.resolve())
+    .catch(e=>{pdfReady=null;throw e;});
+  return pdfReady;
+}
+const pdfListo=()=>!!(window.jspdf&&window.jspdf.jsPDF&&window.jspdf.jsPDF.API&&window.jspdf.jsPDF.API.autoTable);
+const fp=n=>fmt(n).replace(/−/g,'-');
+function nombrePdf(){return ('Zebra_Calle_'+(noche.fecha||hoyLocal())+'_'+(noche.nombre||'noche')).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w-]+/g,'_')+'.pdf';}
+function armarPdf(){
+  // Hoja 1: rendición final con el formato que usa administración (entradas → cierre total → transferencia/efectivo → gastos → efectivo a entregar)
+  // Hoja 2: anexo con el detalle por RRPP (sueldos y cajas)
+  const N=calcNoche();
+  const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'});
+  const W=210,M=16,INK=[20,20,20],GRIS=[74,71,64],ROJO=[143,29,18],VERDE=[15,77,42];let y=0;
+  const tabla=(head,body,opts)=>{opts=opts||{};const cs=opts.columnStyles||{};const extra=opts.didParseCell;
+    opts.didParseCell=d=>{if(d.section==='head'&&cs[d.column.index]&&cs[d.column.index].halign)d.cell.styles.halign=cs[d.column.index].halign;if(extra)extra(d);};
+    doc.autoTable(Object.assign({startY:y,head:head?[head]:undefined,showHead:head?'firstPage':false,body,theme:'grid',margin:{left:M,right:M},styles:{fontSize:10,cellPadding:2.2,textColor:20,lineColor:190,lineWidth:.25},headStyles:{fillColor:INK,textColor:255,fontStyle:'bold'}},opts));
+    y=doc.lastAutoTable.finalY;};
+  const titulo=t=>{doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(12);doc.text(t,M,y);doc.setLineWidth(.5);doc.setDrawColor(...INK);doc.line(M,y+1.5,M+doc.getTextWidth(t),y+1.5);y+=6;};
+  const caja=(label,monto,opt)=>{opt=opt||{};const h=opt.h||13;doc.setDrawColor(...INK);doc.setLineWidth(opt.grueso?.9:.5);if(opt.fill){doc.setFillColor(...opt.fill);doc.rect(M,y,W-2*M,h,'FD');}else doc.rect(M,y,W-2*M,h);
+    doc.setFont('helvetica','bold');doc.setFontSize(opt.fs||12);doc.setTextColor(...(opt.color||INK));doc.text(label,M+4,y+h/2+1.6);
+    doc.setFontSize(opt.fsm||16);doc.text(monto,W-M-4,y+h/2+2,{align:'right'});doc.setTextColor(...INK);y+=h;};
+  const linea=(label,monto,opt)=>{opt=opt||{};doc.setFont('helvetica',opt.bold?'bold':'normal');doc.setFontSize(opt.fs||11);doc.setTextColor(...(opt.color||INK));doc.text(label,M+(opt.ind||4),y);doc.text(monto,W-M-4,y,{align:'right'});doc.setTextColor(...INK);y+=opt.gap||6.5;};
+  const encabezado=(sub)=>{doc.setFillColor(...INK);doc.rect(0,0,W,22,'F');doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(17);doc.text('ZEBRA CLUB · RENDICIÓN DE CALLE',M,10.5);
+    doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.text(`${fechaTxt(noche.fecha)} · ${noche.nombre||''}${noche.numero?' · Noche '+noche.numero:''}`,M,17.5);doc.text(sub,W-M,17.5,{align:'right'});doc.setTextColor(...INK);y=32;};
+
+  // ================= HOJA 1 =================
+  encabezado('Rendición final');
+  // ---- ENTRADAS (cantidad × valor = total), una fila por tipo y precio ----
+  titulo('ENTRADAS');
+  const grupos={};
+  vivos().filter(m=>m.t==='venta').forEach(v=>{const k=v.tipo+'|'+(v.precio||0);grupos[k]=grupos[k]||{tipo:v.tipo,precio:v.precio||0,qty:0,total:0};grupos[k].qty+=v.qty;grupos[k].total+=v.total;});
+  const orden=TT.map(t=>t.id);
+  const filasE=Object.values(grupos).sort((x,z)=>orden.indexOf(x.tipo)-orden.indexOf(z.tipo)||x.precio-z.precio)
+    .map(g=>{const t=getT(g.tipo)||{label:g.tipo};return [t.label,String(g.qty),t.free?'Free':fp(g.precio),t.free?'-':fp(g.total)];});
+  if(!filasE.length)filasE.push(['Sin ventas cargadas','','','']);
+  tabla(['Tipo','Cant.','Valor','Total'],filasE,{columnStyles:{0:{cellWidth:78},1:{halign:'right'},2:{halign:'right'},3:{halign:'right',fontStyle:'bold'}}});
+  y+=2;
+  caja('CIERRE TOTAL',fp(N.vendido),{grueso:true,h:14,fsm:18});
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GRIS);
+  doc.text(`${N.qtyPaga} entradas pagas${N.qtyFree?` + ${N.qtyFree} free`:''} · solo venta de calle`,M,y+5);doc.setTextColor(...INK);y+=10;
+  // ---- cómo entró la plata de la caja: transferencia y efectivo, bien marcados ----
+  const bw2=(W-2*M-6)/2;
+  [['TRANSFERENCIA',fp(N.transfer),'Ya está en la cuenta'],['EFECTIVO',fp(N.efectivo),'Cobrado en mano']].forEach((k,i)=>{const x=M+i*(bw2+6);
+    doc.setDrawColor(...INK);doc.setLineWidth(.9);doc.setFillColor(...(i?[232,232,232]:[222,240,227]));doc.rect(x,y,bw2,22,'FD');
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(...GRIS);doc.text(k[0],x+4,y+6.5);
+    doc.setTextColor(...INK);doc.setFontSize(19);doc.text(k[1],x+4,y+15.5);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...GRIS);doc.text(k[2],x+4,y+20);doc.setTextColor(...INK);});
+  y+=31;
+  // ---- GASTOS pagados con el efectivo ----
+  titulo('GASTOS');
+  const gastos=[];
+  vivos().filter(m=>m.t==='gasto').forEach(m=>gastos.push([(m.desc||'Gasto')+' ('+((cajas.find(c=>c.id===m.caja)||{}).nombre||'caja')+')',m.monto]));
+  vivos().filter(m=>m.t==='gastoClub').forEach(m=>gastos.push([m.desc||'Gasto del club',m.monto]));
+  if(N.sueldosCaja)gastos.push(['Sueldos pagados de la caja',N.sueldosCaja]);
+  if(!gastos.length)gastos.push(['Sin gastos',0]);
+  gastos.forEach(g=>linea('- '+g[0],fp(g[1]),{ind:6,gap:6}));
+  y+=1;
+  const totG=N.gastosRRPP+N.gastosClub+N.sueldosCaja;
+  caja('TOTAL GASTOS',fp(totG),{h:11,fs:11,fsm:13,fill:[251,231,228]});
+  y+=12;
+  // ---- lo que debería haber → faltantes → entrega en efectivo ----
+  const esperado=N.efectivo-totG;
+  const real=N.hayConteo?N.contado:N.enMano;
+  const dif=real-esperado;
+  linea('Efectivo que debería haber',fp(esperado),{bold:true,fs:12});
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...GRIS);doc.text(`Efectivo ${fp(N.efectivo)} - total gastos ${fp(totG)}`,M+4,y-2.5);doc.setTextColor(...INK);y+=3;
+  const quien=N.conDif.map(x=>`${x.c.nombre} ${difTexto(x.k.diferencia).toLowerCase()}`.replace(/−/g,'-'));
+  if(N.pendientes.length)quien.push(`sin rendir: ${N.pendientes.map(x=>x.c.nombre).join(', ')}`);
+  if(N.hayConteo&&!cuadra(N.difConteo))quien.push(`conteo de billetes ${difTexto(N.difConteo).toLowerCase()}`.replace(/−/g,'-'));
+  const etq=dif>0&&!cuadra(dif)?'Sobrantes':'Faltantes';
+  linea(etq,cuadra(dif)?'$0':fp(Math.abs(dif)),{bold:true,fs:12,color:cuadra(dif)?VERDE:ROJO});
+  if(quien.length&&!cuadra(dif)){doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...ROJO);doc.text(quien.join(' · '),M+4,y-2.5,{maxWidth:W-2*M-8});doc.setTextColor(...INK);y+=4;}
+  y+=2;
+  caja('ENTREGA EN EFECTIVO',fp(real),{grueso:true,h:17,fs:13,fsm:21,fill:[255,243,196]});
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...GRIS);doc.text(N.hayConteo?'Según el conteo de billetes':'Según lo que entregaron las cajas (sin conteo de billetes)',M,y+4.5);doc.setTextColor(...INK);y+=12;
+  if(N.sueldosZebra){y+=2;linea('Sueldos que paga Zebra (no salen de esta caja)',fp(N.sueldosZebra),{bold:true});}
+  if(N.sueldosSinDef){linea('Sueldos sin definir quién paga',fp(N.sueldosSinDef),{bold:true,color:ROJO});}
+  // ---- firmas ----
+  y=Math.max(y+16,262);doc.setDrawColor(...INK);doc.setLineWidth(.3);doc.line(M,y,M+72,y);doc.line(W-M-72,y,W-M,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GRIS);doc.text('Entregó (encargado de calle)',M,y+5);doc.text('Recibió (administración)',W-M-72,y+5);doc.setTextColor(...INK);
+
+  // ================= HOJA 2: ANEXO =================
+  doc.addPage();encabezado('Anexo: detalle por RRPP');
+  titulo('SUELDOS');
+  const sRows=N.cs.map(({c,k})=>[c.nombre,fp(n0(c.fijo)),`${k.qtyPaga} x ${fp(n0(c.comisTicket))}`,k.alpogo?`${k.alpogo} x ${fp(k.comisAlpogo)}`:'-',fp(k.comision),c.pago==='caja'?'De la caja':c.pago==='zebra'?'Paga Zebra':'Sin definir']);
+  sRows.push(['TOTAL','','','',fp(N.sueldos),'']);
+  tabla(['RRPP','Fijo','Calle','Alpogo','Total','Cómo se paga'],sRows,{styles:{fontSize:9,cellPadding:1.8,textColor:20,lineColor:190,lineWidth:.25},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},
+    didParseCell:d=>{if(d.section==='body'&&d.row.index===sRows.length-1)d.cell.styles.fontStyle='bold';if(d.section==='body'&&d.column.index===5&&/Paga Zebra|Sin definir/.test(String(d.cell.raw))){d.cell.styles.fontStyle='bold';d.cell.styles.textColor=ROJO;}}});
+  if(N.alpogo){y+=5;doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...GRIS);doc.text(`Alpogo: ${N.alpogo} entradas vendidas por los links de los RRPP. Esa plata la cobra la ticketera; acá solo se paga la comisión.`,M,y,{maxWidth:W-2*M});doc.setTextColor(...INK);}
+  y+=10;titulo('CAJAS');
+  const cRows=N.cs.map(({c,k})=>[c.nombre,String(k.qtyPaga)+(k.qtyFree?` +${k.qtyFree}f`:''),fp(k.vendido),fp(k.transfer),fp(k.gastos),fp(k.aEntregar+k.aCuenta),fp(k.aCuenta+(k.entrego||0)),k.rendida?(cuadra(k.diferencia)?'Cuadra':difTexto(k.diferencia).replace(/−/g,'-')):(k.reabierta?'Volver a rendir':'Sin rendir')]);
+  tabla(['RRPP','Entr.','Vendido','Transf.','Gastos','Debía entregar','Entregó','Estado'],cRows,{styles:{fontSize:8.5,cellPadding:1.7,textColor:20,lineColor:190,lineWidth:.25},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'}},
+    didParseCell:d=>{if(d.section==='body'&&d.column.index===7&&!/Cuadra/.test(String(d.cell.raw))){d.cell.styles.textColor=ROJO;d.cell.styles.fontStyle='bold';}}});
+  if(N.hayConteo){y+=10;titulo('CONTEO DE BILLETES');const b=noche.billetes||{};const br=DENOMS.filter(d=>pint(b[d])).map(d=>[fp(d),String(pint(b[d])),fp(d*pint(b[d]))]);br.push(['TOTAL','',fp(N.contado)]);
+    tabla(['Billete','Cant.','Subtotal'],br,{tableWidth:90,styles:{fontSize:9,cellPadding:1.6,textColor:20,lineColor:190,lineWidth:.25},columnStyles:{1:{halign:'right'},2:{halign:'right'}},didParseCell:d=>{if(d.section==='body'&&d.row.index===br.length-1)d.cell.styles.fontStyle='bold';}});}
+  const pages=doc.getNumberOfPages();for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(120);doc.text(`Zebra · Calle — ${fechaTxt(noche.fecha)} · hoja ${i} de ${pages}`,W-M,291,{align:'right'});doc.setTextColor(...INK);}
+  return doc;
+}
+function descargarPdf(doc){doc.save(nombrePdf());}
+// En el celu abre el menú de compartir (WhatsApp); en la PC descarga el PDF
+function compartirPdf(){
+  if(!pdfListo()){toast('Preparando el PDF… tocá de nuevo en unos segundos.',{err:true});cargarPdf().catch(()=>toast('No se pudo cargar el generador de PDF. Revisá internet.',{err:true}));return;}
+  const doc=armarPdf();const name=nombrePdf();
+  let file=null;try{file=new File([doc.output('blob')],name,{type:'application/pdf'});}catch(e){}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:name}).catch(e=>{if(e&&e.name!=='AbortError'){descargarPdf(doc);toast('PDF descargado: adjuntalo en el WhatsApp de administración.');}});
+  }else{descargarPdf(doc);toast('PDF descargado: adjuntalo en el WhatsApp de administración.');}
+}
+
 /* ================= ACCIONES ================= */
 const A={
   tab(v){U.tab=v;U.view=null;window.scrollTo(0,0);render();},
@@ -739,12 +853,12 @@ const A={
   guardarBilletes(){const upd={};DENOMS.forEach(d=>{upd['billetes.'+d]=pint($('#bi_'+d).value);});updNoche(upd);U.sheet=null;render();},
   numPrecios(v){updNoche({numPrecios:+v});},
   togTipo(id){const act=noche.tipos&&noche.tipos.length?noche.tipos.slice():TT.map(t=>t.id);const i=act.indexOf(id);if(i>=0){if(act.length>1)act.splice(i,1);}else act.push(id);updNoche({tipos:act});},
-  imprimir(){window.print();},
+  imprimir(){if(!pdfListo()){toast('Preparando el PDF… tocá de nuevo en unos segundos.',{err:true});cargarPdf().catch(()=>{});return;}descargarPdf(armarPdf());},
   enviarAdmin(){
     const N=calcNoche();
     if(N.sueldosSinDef>0){toast('Falta definir de dónde sale el sueldo de algún RRPP',{err:true});return;}
     const faltan=N.pendientes.length;
-    const fn=()=>{updNoche({estado:'cerrada',cerradaEn:TS(),resumen:resumenAdmin()});toast('Noche enviada a administración');};
+    const fn=()=>{updNoche({estado:'cerrada',cerradaEn:TS(),resumen:resumenAdmin()});compartirPdf();};
     if(faltan>0){U.sheet={k:'confirm',titulo:`Faltan ${faltan} caja${faltan>1?'s':''} por rendir`,texto:'¿Enviar igual? Después se puede reenviar.',si:'Enviar igual',peligro:false,fn};renderOverlay();}
     else fn();
   },
@@ -818,10 +932,10 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&U.sheet&&U.sheet.k!=='billetes'){U.sheet=null;renderOverlay();}
   if(e.key==='Enter'&&U.sheet&&e.target.tagName==='INPUT'){const b={monto:'guardarMonto',billetes:'guardarBilletes',nuevaNoche:'crearNuevaNoche'}[U.sheet.k];if(b){e.preventDefault();A[b]();}}
 });
-window.addEventListener('beforeprint',()=>{if(U.tab!=='cierre'||U.view){U.tab='cierre';U.view=null;render();}});
 
 listen();
 render();
+setTimeout(()=>cargarPdf().catch(()=>{}),1500); // deja listo el generador de PDF para que "Enviar por WhatsApp" responda al instante
 </script>
 </body>
 </html>

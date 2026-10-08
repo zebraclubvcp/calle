@@ -746,7 +746,7 @@ function renderOverlay(){
       <div class="grid2"><button class="cta2" data-a="cerrarSheet">Cancelar</button><button class="cta" data-a="guardarBilletes" style="font-size:26px;min-height:64px">${I.check} Listo</button></div>`;
   }else if(s.k==='confirm'){
     inner=`<h2 class="ttl" style="font-size:19px;margin:0" id="shT">${esc(s.titulo)}</h2><p class="note" style="font-size:15px">${esc(s.texto)}</p>
-      <div class="grid2"><button class="cta2" data-a="cerrarSheet">Cancelar</button><button class="cta ${s.peligro===false?'':'danger'}" data-a="confirmarSi" style="font-size:24px;min-height:64px">${esc(s.si)}</button></div>`;
+      <div class="grid2"><button class="cta2" data-a="cerrarSheet">Cancelar</button><button class="cta ${s.peligro===false?'':'danger'}" data-a="confirmarSi" style="font-size:19px;min-height:64px;padding:8px 10px;white-space:normal;line-height:1.15;overflow-wrap:anywhere">${esc(s.si)}</button></div>`;
   }
   const first=!sheetShown;
   o.innerHTML=`<div class="sheet-bg ${first?'in':''}" ${bgClose}><div class="sheet" data-stop="1" role="dialog" aria-modal="true" aria-labelledby="shT">${inner}</div></div>`;
@@ -935,7 +935,7 @@ const A={
     const r=resumenNocheActual();
     const hacer=()=>{const b=db.batch();b.update(nocheRef(),{estado:'descartada',descartadaEn:TS()});b.set(db.collection('config').doc('calle'),{nocheActivaId:null});w(b.commit());U.tab='noche';U.view=null;toast('Noche descartada');};
     U.sheet={k:'confirm',titulo:'¿Descartar esta noche?',texto:`«${noche.nombre||'Sin nombre'}» se saca de la app y no cuenta para nada (queda guardada como descartada). ${r}`,si:'Sí, descartar',
-      fn:()=>{U.sheet={k:'confirm',titulo:'Confirmá de nuevo',texto:`Última confirmación: se descarta «${noche.nombre||'Sin nombre'}». ${r} Usalo solo si fue una prueba o un error.`,si:'Descartar definitivamente',fn:hacer};renderOverlay();}};
+      fn:()=>{U.sheet={k:'confirm',titulo:'Confirmá de nuevo',texto:`Última confirmación: se descarta «${noche.nombre||'Sin nombre'}». ${r} Usalo solo si fue una prueba o un error.`,si:'Descartar',fn:hacer};renderOverlay();}};
     renderOverlay();},
   guardarMonto(){
     const s=U.sheet;const monto=pint($('#sMonto').value);if(!monto){$('#sMonto').focus();return;}
@@ -1000,7 +1000,7 @@ const A={
     const fecha=$('#nnF').value||hoyLocal();
     const r=resumenNocheActual(), sinRendir=calcNoche().pendientes.length;
     U.sheet={k:'confirm',peligro:false,titulo:'¿Empezar una noche nueva?',texto:`«${noche.nombre||'Sin nombre'}» se cierra y queda en el historial. ${r}${sinRendir?` Ojo: ${sinRendir} caja${sinRendir>1?'s':''} sin rendir.`:''} La nueva («${nombre}») arranca en cero.`,si:'Sí, empezar',
-      fn:()=>{U.sheet={k:'confirm',peligro:false,titulo:'Confirmá de nuevo',texto:`Última confirmación: cerrar «${noche.nombre||'Sin nombre'}» y abrir «${nombre}» (${fechaTxt(fecha)}).`,si:'Empezar noche nueva',fn:()=>A.crearNuevaNocheOk(nombre,fecha)};renderOverlay();}};
+      fn:()=>{U.sheet={k:'confirm',peligro:false,titulo:'Confirmá de nuevo',texto:`Última confirmación: cerrar «${noche.nombre||'Sin nombre'}» y abrir «${nombre}» (${fechaTxt(fecha)}).`,si:'Empezar',fn:()=>A.crearNuevaNocheOk(nombre,fecha)};renderOverlay();}};
     renderOverlay();
   },
   crearNuevaNocheOk(nombre,fecha){

@@ -197,9 +197,55 @@ function clearSubs(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];pend.noch
 const pending=()=>pend.noche||pend.cajas||pend.movs;
 
 function nocheRef(){return db.collection('calle_noches').doc(nocheId);}
+
+/* ================= EQUIPO (lista general compartida con App Puerta: config/equipo) ================= */
+// Cada RRPP tiene sus equipos (redes / calle / kosmos). Acá solo se muestran los de calle.
+// alpogoPago:'redes' = sus ventas de Alpogo se le pagan en Redes, no en esta caja.
+const EQUIPO_BASE={
+  rrpp:[
+    {nombre:'Renzo Pacher',equipos:['redes']},
+    {nombre:'Milagros Marta',equipos:['redes'],alpogo:'Mili Marta'},
+    {nombre:'Diego Abatte',equipos:['redes'],alpogo:'Diego Abbate'},
+    {nombre:'Agustina Avallay',equipos:['redes','calle'],alpogoPago:'redes'},
+    {nombre:'Julieta Davi',equipos:['redes'],alpogo:'Juli Davi'},
+    {nombre:'Jazmin Barañano',equipos:['redes'],alpogo:'Jaz Barañano'},
+    {nombre:'Valentina Gugliotti',equipos:['redes'],alpogo:'Vale Gugliotti'},
+    {nombre:'Leonel Araujo',equipos:['redes'],alpogo:'Leo Araujo'},
+    {nombre:'Milmei Ruiz',equipos:['redes']},
+    {nombre:'Abril Casini',equipos:['calle']},
+    {nombre:'Ivan Schnebeerger',equipos:['calle']},
+    {nombre:'Pau Carena',equipos:['calle']},
+    {nombre:'Yamila Minichelli',equipos:['calle'],alpogo:'Yami Minichelli'},
+    {nombre:'Leandro Rodriguez',equipos:['calle'],alpogo:'Lean Rodriguez'},
+    {nombre:'Juan Martin Elias',equipos:['calle']},
+    {nombre:'Noah Farrer',equipos:['kosmos']},
+    {nombre:'Bauti Toledo',equipos:['kosmos']},
+    {nombre:'Emi Estarrona',equipos:['kosmos']},
+    {nombre:'Emi Repetto',equipos:['kosmos']}
+  ],
+  encargado:['Facu Fernandez','Manu Contreras','Simón Callejón'],
+  dueno:['Benja Peralta','Fabio Testi','Glenda Testi','Jonas Testi']
+};
+let equipo=JSON.parse(JSON.stringify(EQUIPO_BASE)), equipoGuardado=false;
+const OTRO='__otro__';
+const normN=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+const persona=n=>(equipo.rrpp||[]).find(p=>normN(p.nombre)===normN(n));
+const rrppCalle=()=>(equipo.rrpp||[]).filter(p=>(p.equipos||[]).includes('calle')).map(p=>p.nombre).sort((a,b)=>a.localeCompare(b,'es'));
+const alpogoEnRedes=n=>{const p=persona(n);return !!(p&&p.alpogoPago==='redes');};
+// Suma un RRPP nuevo de calle a la lista general (o le agrega "calle" si ya existía en otro equipo).
+function altaRrppCalle(nombre){
+  const lista=JSON.parse(JSON.stringify(equipo));
+  const p=lista.rrpp.find(x=>normN(x.nombre)===normN(nombre));
+  if(p){if((p.equipos||[]).includes('calle'))return p.nombre;p.equipos=[...(p.equipos||[]),'calle'];}
+  else lista.rrpp.push({nombre,equipos:['calle']});
+  equipo=lista;
+  w(db.collection('config').doc('equipo').set(lista),'la lista de RRPP');
+  return p?p.nombre:nombre;
+}
 function onErr(e){fbError=e;toast('Error de conexión con la base: '+(e.code||e.message||e),{err:true});render();}
 function listen(){
   if(!db){loaded=true;render();return;}
+  db.collection('config').doc('equipo').onSnapshot(s=>{if(s.exists){const d=s.data();equipo={rrpp:Array.isArray(d.rrpp)?d.rrpp:EQUIPO_BASE.rrpp,encargado:d.encargado||EQUIPO_BASE.encargado,dueno:d.dueno||EQUIPO_BASE.dueno};equipoGuardado=true;}if(U.view==='editCaja')return;liveRender();},()=>{});
   db.collection('config').doc('calle').onSnapshot(s=>{
     const id=s.exists?s.data().nocheActivaId:null;
     if(!id){if(nocheId){clearSubs();nocheId=null;noche=null;cajas=[];movs=[];}loaded=true;render();return;}
@@ -413,7 +459,7 @@ function estadoCaja(k){
 function vCajas(){
   const N=calcNoche();
   return `<main><h1 class="lbl">Cajas de la noche</h1>
-  ${cajas.length?`<div class="box list">${N.cs.map(({c,k})=>`<button data-a="abrirCaja" data-v="${c.id}" style="min-height:64px"><span class="grow"><span style="font-weight:600;font-size:17px">${esc(c.nombre)}</span><br><span class="sub num">${k.qtyPaga} entradas · ${fmt(k.vendido)}</span></span>${estadoCaja(k)}${I.chev}</button>`).join('')}</div>`:'<div class="box empty">No hay RRPP cargados.</div>'}
+  ${cajas.length?`<div class="box list">${N.cs.map(({c,k})=>`<button data-a="abrirCaja" data-v="${c.id}" style="min-height:64px"><span class="grow"><span style="font-weight:600;font-size:17px">${esc(c.nombre)}</span><br><span class="sub num">${c.qr?'QR '+esc(c.qr)+' · ':''}${k.qtyPaga} entradas · ${fmt(k.vendido)}</span></span>${estadoCaja(k)}${I.chev}</button>`).join('')}</div>`:'<div class="box empty">No hay RRPP cargados.</div>'}
   <button class="btn" data-a="nuevaCaja">+ Agregar RRPP</button></main>`;
 }
 
@@ -461,7 +507,7 @@ function vCaja(){
     return `<tr ${pas?'style="background:var(--badbg)"':''}><td ${pas?'style="color:var(--badink);font-weight:600"':''}>${esc(t.label)}</td><td class="num">${a||'—'}</td><td class="num">${v}</td><td class="num" style="font-weight:700;${pas?'color:var(--badink)':''}">${a?(pas?(q+' pasado'):q):'—'}</td></tr>`;}).join('');
   const lista=k.ms.slice().reverse();
   const efCobrado=k.vendido-k.transfer;
-  const sub=k.reabierta?'Volver a rendir':k.rendida?'Caja rendida':'';
+  const sub=[c.qr?'QR '+esc(c.qr):'',k.reabierta?'Volver a rendir':k.rendida?'Caja rendida':''].filter(Boolean).join(' · ');
   const filaMov=m=>{let txt,monto,cls='';
     if(m.t==='venta'){const t=getT(m.tipo)||{label:m.tipo};txt=`${m.qty} ${esc(t.label)}${t.free?'':' · Precio '+((m.tier||0)+1)}`;monto=t.free?'free':fmt(m.total);}
     else if(m.t==='transfer'){txt='<b>Transferencia</b>';monto=fmt(m.monto);cls='t-ok';}
@@ -493,13 +539,13 @@ function vCaja(){
       ${lista.length?`<div class="box list">${lista.map(filaMov).join('')}</div>`:'<p class="note">Todavía no hay ventas ni plata cargada.</p>'}
     </section>
 
-    <section class="stack">
+    ${alpogoEnRedes(c.nombre)?`<p class="note">Sus ventas de Alpogo se le pagan en Redes, no en esta caja.</p>`:`<section class="stack">
       <h2 class="lbl">Alpogo · solo para su comisión</h2>
       <div class="box" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 14px">
         <span style="font-size:15px">Vendidas por su link<br><span class="sub">La plata la cobra Alpogo, no esta caja</span></span>
         <div style="display:flex;align-items:center;gap:6px"><button class="btn" data-a="alpogo" data-v="-1" aria-label="Restar una de Alpogo" style="width:48px;padding:0;display:flex;align-items:center;justify-content:center">${I.minus}</button><span class="bebas num" style="font-size:22px;min-width:36px;text-align:center" aria-live="polite">${k.alpogo}</span><button class="btn" data-a="alpogo" data-v="1" aria-label="Sumar una de Alpogo" style="width:48px;padding:0;display:flex;align-items:center;justify-content:center">${I.plus}</button></div>
       </div>
-    </section>
+    </section>`}
     ${cupoRows?`<section class="stack"><div class="row-between" style="align-items:center"><h2 class="lbl">Cupos</h2><button class="link" data-a="editCaja">Editar cupos</button></div>
       <div class="box"><table class="t"><thead><tr><th>Tipo</th><th>Dio</th><th>Vendió</th><th>Quedan</th></tr></thead><tbody>${cupoRows}</tbody></table></div></section>`:''}
     <p class="note num">Sueldo de hoy: ${fmt(k.comision)} (fijo ${fmt(c.fijo)} + ${k.qtyPaga} de calle + ${k.alpogo} de Alpogo)</p>
@@ -524,7 +570,7 @@ function vRendir(){
   const k=calcCaja(c);
   const entVal=U.rendir.entrego;
   const pago=c.pago||null;
-  return hdrBack('Rendir caja',esc(c.nombre),'volverCaja')+`<main>
+  return hdrBack('Rendir caja',esc(c.nombre)+(c.qr?' · QR '+esc(c.qr):''),'volverCaja')+`<main>
     ${k.reabierta?`<div class="status warn">${I.alert} Ya había rendido ${fmt(k.entrego)}. Corregí el total entregado.</div>`:''}
     <section class="stack"><h2 class="lbl">1 · Cuánto tiene que entregar</h2>
       <div class="box list num">
@@ -562,7 +608,13 @@ function vEditCaja(){
   const nueva=!c;
   const d=c||{nombre:'',comisTicket:COMIS_ALPOGO_DEF,fijo:'',cupos:{},comisAlpogo:COMIS_ALPOGO_DEF};
   return hdrBack(nueva?'Nuevo RRPP':'Editar RRPP',nueva?'':esc(d.nombre),nueva?'tabCajas':'volverCaja')+`<main>
-    <div class="field"><label for="eNom">Nombre</label><input class="in" id="eNom" value="${esc(d.nombre)}" placeholder="Nombre y apellido" autocomplete="off"></div>
+    ${(()=>{const usados=cajas.filter(x=>!c||x.id!==c.id).map(x=>normN(x.nombre));
+      const nombres=rrppCalle().filter(n=>!usados.includes(normN(n)));
+      if(d.nombre&&!nombres.some(n=>normN(n)===normN(d.nombre)))nombres.unshift(d.nombre);
+      return `<div class="field"><label for="eNomSel">RRPP</label><select class="in" id="eNomSel" onchange="document.getElementById('eNomOtroBox').style.display=this.value==='${OTRO}'?'':'none';if(this.value==='${OTRO}')document.getElementById('eNom').focus()">
+        <option value="">Elegí el RRPP…</option>${nombres.map(n=>`<option value="${esc(n)}" ${normN(n)===normN(d.nombre)?'selected':''}>${esc(n)}</option>`).join('')}<option value="${OTRO}">+ Agregar otro nombre…</option></select></div>
+      <div class="field" id="eNomOtroBox" style="display:none"><label for="eNom">Nombre del RRPP nuevo</label><input class="in" id="eNom" placeholder="Nombre y apellido, igual que en el Excel" autocomplete="off"><span class="sub">Queda guardado en la lista para las próximas noches.</span></div>`;})()}
+    <div class="field"><label for="eQr">QR de esta noche</label><input class="in num" id="eQr" inputmode="numeric" value="${esc(d.qr||'')}" placeholder="N° de QR asignado" autocomplete="off"><span class="sub">Solo para esta noche: la próxima arranca vacío.</span></div>
     <div class="grid2">
       <div class="field"><label for="eCom">Por entrada (calle)</label><input class="in num" id="eCom" inputmode="numeric" value="${esc(d.comisTicket)}" placeholder="0"></div>
       <div class="field"><label for="eFijo">Sueldo fijo</label><input class="in num" id="eFijo" inputmode="numeric" value="${esc(d.fijo)}" placeholder="0"></div>
@@ -807,7 +859,7 @@ function armarPdf(){
     didParseCell:d=>{if(d.section==='body'&&d.row.index===sRows.length-1)d.cell.styles.fontStyle='bold';if(d.section==='body'&&d.column.index===5&&/Paga Zebra|Sin definir/.test(String(d.cell.raw))){d.cell.styles.fontStyle='bold';d.cell.styles.textColor=ROJO;}}});
   if(N.alpogo){y+=5;doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...GRIS);doc.text(`Alpogo: ${N.alpogo} entradas vendidas por los links de los RRPP. Esa plata la cobra la ticketera; acá solo se paga la comisión.`,M,y,{maxWidth:W-2*M});doc.setTextColor(...INK);}
   y+=10;titulo('CAJAS');
-  const cRows=N.cs.map(({c,k})=>[c.nombre,String(k.qtyPaga)+(k.qtyFree?` +${k.qtyFree}f`:''),fp(k.vendido),fp(k.transfer),fp(k.gastos),fp(k.aEntregar+k.aCuenta),fp(k.aCuenta+(k.entrego||0)),k.rendida?(cuadra(k.diferencia)?'Cuadra':difTexto(k.diferencia).replace(/−/g,'-')):(k.reabierta?'Volver a rendir':'Sin rendir')]);
+  const cRows=N.cs.map(({c,k})=>[c.nombre+(c.qr?' (QR '+c.qr+')':''),String(k.qtyPaga)+(k.qtyFree?` +${k.qtyFree}f`:''),fp(k.vendido),fp(k.transfer),fp(k.gastos),fp(k.aEntregar+k.aCuenta),fp(k.aCuenta+(k.entrego||0)),k.rendida?(cuadra(k.diferencia)?'Cuadra':difTexto(k.diferencia).replace(/−/g,'-')):(k.reabierta?'Volver a rendir':'Sin rendir')]);
   tabla(['RRPP','Entr.','Vendido','Transf.','Gastos','Debía entregar','Entregó','Estado'],cRows,{styles:{fontSize:8.5,cellPadding:1.7,textColor:20,lineColor:190,lineWidth:.25},columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'}},
     didParseCell:d=>{if(d.section==='body'&&d.column.index===7&&!/Cuadra/.test(String(d.cell.raw))){d.cell.styles.textColor=ROJO;d.cell.styles.fontStyle='bold';}}});
   if(N.hayConteo){y+=10;titulo('CONTEO DE BILLETES');const b=noche.billetes||{};const br=DENOMS.filter(d=>pint(b[d])).map(d=>[fp(d),String(pint(b[d])),fp(d*pint(b[d]))]);br.push(['TOTAL','',fp(N.contado)]);
@@ -855,7 +907,7 @@ const A={
   borrarMov(id){const m=movs.find(x=>x.id===id);if(!m)return;
     const txt=m.t==='venta'?`${m.qty} ${(getT(m.tipo)||{}).label||''}${m.total?' · '+fmt(m.total):''}`:fmt(m.monto);
     U.sheet={k:'confirm',titulo:m.t==='venta'?'¿Anular esta venta?':'¿Borrar este movimiento?',texto:txt+'. Queda registrado como anulado en el historial.',si:m.t==='venta'?'Anular':'Borrar',fn:()=>{anular(id);if(m.caja)reabrirSiRendida(m.caja);}};renderOverlay();},
-  alpogo(d){const c=cajas.find(x=>x.id===U.caja);if(!c)return;if(+d<0&&pint(c.alpogo)<=0)return;updCaja(c.id,{alpogo:INC(+d)});reabrirSiRendida(c.id);},
+  alpogo(d){const c=cajas.find(x=>x.id===U.caja);if(!c||alpogoEnRedes(c.nombre))return;if(+d<0&&pint(c.alpogo)<=0)return;updCaja(c.id,{alpogo:INC(+d)});reabrirSiRendida(c.id);},
   tipoCarga(v){U.carga=v;render();const el=$('#qMonto');if(el)el.focus();},
   anotarRapido(){
     const ct=U.carga||'transfer';const inp=$('#qMonto');const monto=pint(inp&&inp.value);if(!monto){if(inp)inp.focus();toast('Escribí el monto',{err:true});return;}
@@ -900,9 +952,13 @@ const A={
   editCajaId(id){U.caja=id;A.editCaja();},
   nuevaCaja(){U.caja=null;U.view='editCaja';window.scrollTo(0,0);render();},
   guardarCaja(){
-    const nombre=$('#eNom').value.trim();if(!nombre){$('#eNom').focus();toast('Falta el nombre',{err:true});return;}
+    const sel=$('#eNomSel').value;
+    let nombre=sel===OTRO?$('#eNom').value.trim().replace(/\s+/g,' '):sel;
+    if(!nombre){(sel===OTRO?$('#eNom'):$('#eNomSel')).focus();toast('Elegí el RRPP',{err:true});return;}
+    if(sel===OTRO)nombre=altaRrppCalle(nombre);
+    if(cajas.some(x=>x.id!==U.caja&&normN(x.nombre)===normN(nombre))){toast(nombre+' ya tiene caja esta noche',{err:true});return;}
     const cupos={};tipos().filter(t=>!t.free).forEach(t=>{const v=pint($('#cu_'+t.id).value);if(v)cupos[t.id]=v;});
-    const data={nombre,comisTicket:pint($('#eCom').value),fijo:pint($('#eFijo').value),comisAlpogo:pint($('#eAlp').value),cupos};
+    const data={nombre,qr:$('#eQr').value.trim(),comisTicket:pint($('#eCom').value),fijo:pint($('#eFijo').value),comisAlpogo:pint($('#eAlp').value),cupos};
     if(U.caja){updCaja(U.caja,data);U.view='caja';}
     else{const ref=nocheRef().collection('cajas').doc();w(ref.set({...data,alpogo:0,pago:null,entrego:null,reabierta:false,orden:TS()}),'el RRPP');U.caja=ref.id;U.view='caja';}
     toast('Guardado');window.scrollTo(0,0);render();
@@ -958,7 +1014,7 @@ function resumenAdmin(){
     generado:TS(),entradas:N.qtyPaga,free:N.qtyFree,alpogo:N.alpogo,recaudado:N.vendido,efectivo:N.efectivo,transfer:N.transfer,
     sueldos:N.sueldos,sueldosCaja:N.sueldosCaja,sueldosZebra:N.sueldosZebra,gastosRRPP:N.gastosRRPP,gastosClub:N.gastosClub,
     recibido:N.recibido,enMano:N.enMano,contado:N.contado,difConteo:N.hayConteo?N.difConteo:null,difRRPP:N.difRRPP,
-    cajas:N.cs.map(({c,k})=>({nombre:c.nombre,entradasCalle:k.qtyPaga,free:k.qtyFree,alpogo:k.alpogo,vendido:k.vendido,transfer:k.transfer,efectivoACuenta:k.aCuenta,gastos:k.gastos,aEntregar:k.aEntregar,entrego:k.entrego,rendida:k.rendida,diferencia:k.diferencia,sueldo:k.comision,fijo:n0(c.fijo),comisTicket:n0(c.comisTicket),comisAlpogo:k.comisAlpogo,pago:c.pago||null})),
+    cajas:N.cs.map(({c,k})=>({nombre:c.nombre,qr:c.qr||'',entradasCalle:k.qtyPaga,free:k.qtyFree,alpogo:k.alpogo,vendido:k.vendido,transfer:k.transfer,efectivoACuenta:k.aCuenta,gastos:k.gastos,aEntregar:k.aEntregar,entrego:k.entrego,rendida:k.rendida,diferencia:k.diferencia,sueldo:k.comision,fijo:n0(c.fijo),comisTicket:n0(c.comisTicket),comisAlpogo:k.comisAlpogo,pago:c.pago||null})),
     porTipo:N.porTipo
   };
 }

@@ -699,6 +699,8 @@ function vAjustes(){
     <section class="stack"><h2 class="lbl">RRPP de la noche (${cajas.length})</h2>
       ${cajas.length?`<div class="box list">${cajas.map(c=>`<button data-a="editCajaId" data-v="${c.id}"><span class="grow">${esc(c.nombre)}</span><span class="m num" style="font-size:13px;text-align:right;line-height:1.3">${fmt(c.fijo)} fijo<br>${fmt(c.comisTicket)} c/u</span>${I.chev}</button>`).join('')}</div>`:''}
       <button class="btn" data-a="nuevaCaja">+ Agregar RRPP</button></section>
+    <section class="stack"><h2 class="lbl">Tipos de entrada que se venden hoy</h2>
+      <div class="grid2">${TT.map(t=>`<button class="opt tog" ${pr(act.includes(t.id))} data-a="togTipo" data-v="${t.id}" style="font-size:15px;font-weight:600;text-align:left">${esc(t.label)}${act.includes(t.id)?I.check:''}</button>`).join('')}</div></section>
     <section class="stack"><h2 class="lbl">Precios</h2>
       <div class="box">${tipos().filter(t=>!t.free).map(t=>{const ps=preciosDe(t.id);const lista=ps.length?ps:[0];
         return `<div style="padding:10px 14px;border-bottom:1px solid var(--line2);display:flex;flex-wrap:wrap;gap:8px 12px;align-items:flex-end;justify-content:space-between">
@@ -706,10 +708,8 @@ function vAjustes(){
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;justify-content:flex-end">
             ${lista.map((v,i)=>`<div class="field" style="gap:4px"><label for="pr_${t.id}_${i}" style="font-size:12px;font-weight:700;color:var(--ink2)">PRECIO ${i+1}</label><input class="cupo-in num" style="width:112px;min-height:46px" inputmode="numeric" id="pr_${t.id}_${i}" value="${v?v.toLocaleString('es-AR'):''}" placeholder="$" data-i="precio" data-t="${t.id}" data-n="${i}"></div>`).join('')}
           </div></div>`;}).join('')}</div>
-      <p class="note">Se guardan solos al escribir. Si un tipo tiene un solo precio, en la venta se elige solo.</p>
+      <p class="note">Solo aparecen los tipos activos de arriba. Se guardan solos al escribir. Si un tipo tiene un solo precio, en la venta se elige solo.</p>
     </section>
-    <section class="stack"><h2 class="lbl">Tipos de entrada que se venden hoy</h2>
-      <div class="grid2">${TT.map(t=>`<button class="opt tog" ${pr(act.includes(t.id))} data-a="togTipo" data-v="${t.id}" style="font-size:15px;font-weight:600;text-align:left">${esc(t.label)}${act.includes(t.id)?I.check:''}</button>`).join('')}</div></section>
     <section class="stack" style="border-top:1px solid var(--line);padding-top:16px"><h2 class="lbl">Nueva noche</h2>
       <p class="note">Guarda esta noche en el historial (no se borra nada) y abre una nueva con los mismos RRPP, sueldos y precios, en cero.</p>
       ${U.nueva?`<div class="box stack" style="padding:12px;gap:10px">

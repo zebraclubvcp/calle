@@ -200,6 +200,11 @@ function clearSubs(){unsubs.forEach(f=>{try{f()}catch(e){}});unsubs=[];pend.noch
 const pending=()=>pend.noche||pend.cajas||pend.movs;
 
 function nocheRef(){return db.collection('calle_noches').doc(nocheId);}
+// Texto corto con lo que tiene cargado la noche activa (para las confirmaciones).
+function resumenNocheActual(){
+  const v=movs.filter(m=>m.t==='venta'&&!m.anulada).length;
+  return v?`Tiene ${v} venta${v>1?'s':''} cargada${v>1?'s':''} en ${cajas.length} caja${cajas.length!==1?'s':''}.`:`No tiene ventas cargadas (${cajas.length} caja${cajas.length!==1?'s':''}).`;
+}
 
 /* ================= EQUIPO (lista general compartida con App Puerta: config/equipo) ================= */
 // Cada RRPP tiene sus equipos (redes / calle / kosmos). Acá solo se muestran los de calle.
@@ -926,7 +931,12 @@ const A={
     const ref=nocheRef().collection('movs').doc();w(ref.set({t:'gastoClub',caja:null,monto,desc:d?d.value.trim():'',ts:TS(),anulada:false}),'el gasto');
     inp.value='';if(d)d.value='';U.flash=ref.id;toast('Gasto del club anotado: '+fmt(monto));render();},
   togConteo(){U.conteo=!U.conteo;render();},
-  descartarNoche(){U.sheet={k:'confirm',titulo:'¿Descartar esta noche?',texto:'Se saca de la app y no cuenta para nada (queda guardada como descartada). Después empezás una noche nueva desde cero.',si:'Descartar',fn:()=>{const b=db.batch();b.update(nocheRef(),{estado:'descartada',descartadaEn:TS()});b.set(db.collection('config').doc('calle'),{nocheActivaId:null});w(b.commit());U.tab='noche';U.view=null;toast('Noche descartada');}};renderOverlay();},
+  descartarNoche(){
+    const r=resumenNocheActual();
+    const hacer=()=>{const b=db.batch();b.update(nocheRef(),{estado:'descartada',descartadaEn:TS()});b.set(db.collection('config').doc('calle'),{nocheActivaId:null});w(b.commit());U.tab='noche';U.view=null;toast('Noche descartada');};
+    U.sheet={k:'confirm',titulo:'¿Descartar esta noche?',texto:`«${noche.nombre||'Sin nombre'}» se saca de la app y no cuenta para nada (queda guardada como descartada). ${r}`,si:'Sí, descartar',
+      fn:()=>{U.sheet={k:'confirm',titulo:'Confirmá de nuevo',texto:`Última confirmación: se descarta «${noche.nombre||'Sin nombre'}». ${r} Usalo solo si fue una prueba o un error.`,si:'Descartar definitivamente',fn:hacer};renderOverlay();}};
+    renderOverlay();},
   guardarMonto(){
     const s=U.sheet;const monto=pint($('#sMonto').value);if(!monto){$('#sMonto').focus();return;}
     const desc=$('#sDesc')?$('#sDesc').value.trim():'';
@@ -987,8 +997,16 @@ const A={
   crearNuevaNoche(){
     if(U.busy)return;
     const nombre=$('#nnN').value.trim();if(!nombre){$('#nnN').focus();return;}
+    const fecha=$('#nnF').value||hoyLocal();
+    const r=resumenNocheActual(), sinRendir=calcNoche().pendientes.length;
+    U.sheet={k:'confirm',peligro:false,titulo:'¿Empezar una noche nueva?',texto:`«${noche.nombre||'Sin nombre'}» se cierra y queda en el historial. ${r}${sinRendir?` Ojo: ${sinRendir} caja${sinRendir>1?'s':''} sin rendir.`:''} La nueva («${nombre}») arranca en cero.`,si:'Sí, empezar',
+      fn:()=>{U.sheet={k:'confirm',peligro:false,titulo:'Confirmá de nuevo',texto:`Última confirmación: cerrar «${noche.nombre||'Sin nombre'}» y abrir «${nombre}» (${fechaTxt(fecha)}).`,si:'Empezar noche nueva',fn:()=>A.crearNuevaNocheOk(nombre,fecha)};renderOverlay();}};
+    renderOverlay();
+  },
+  crearNuevaNocheOk(nombre,fecha){
+    if(U.busy)return;
     U.busy=true;
-    const fecha=$('#nnF').value||hoyLocal(),numero='';
+    const numero='';
     const viejo=noche,viejoRef=nocheRef(),viejasCajas=cajas.slice();
     const ref=db.collection('calle_noches').doc();
     const batch=db.batch();
